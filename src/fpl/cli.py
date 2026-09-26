@@ -1,0 +1,73 @@
+"""Command-line entrypoint: `fpl <command>` (or `python -m fpl <command>`).
+
+Each command is a small function: open resources, call one piece of the library, print.
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import platform
+from importlib.metadata import version
+
+from fpl import report
+from fpl.config import Settings, load_settings
+from fpl.fplapi import FplClient
+
+COMMANDS: dict[str, tuple] = {}
+
+
+def command(name: str, help_text: str, *arguments):
+    """Register a function as a sub-command. `arguments` are arg(...) values"""
+    def register(func):
+        COMMANDS[name] = (func, help_text, arguments)
+        return func
+    return register
+
+
+def arg(*flags, **kwargs):
+    return flags, kwargs
+
+
+def open_df(settings: Settings):
+    from fpl.storage import connect
+
+    return connect(settings)
+
+
+def entry_id(settings: Settings) -> int:
+    if not settings.entry_id:
+        raise SystemExit("Set FPL_ENTRY_ID in .env first (see `fpl doctor`).")
+    return settings.entry_id
+
+
+@command("doctor", "Check the Python environment, the API and your settings")
+def cmd_doctor(settings: Settings, args) -> None:
+    print(f"Python       {platform.python_version()}")
+    for package in ["httpx", "duckdb", "pandas", "numpy", "scipy", "scikit-learn", "pulp", "highspy"]:
+        print(f"{package:<12} {version(package)}")
+    boot = FplClient(settings, save_raw=False).bootstrap()
+    next_event = next(e for e in boot["events"] if not e["finished"])
+    print(f"FPL API      ok: {len(boot['elements'])} players, next deadline GW{next_event['id']} "
+          f"{next_event['deadline_time']}")
+    print(
+        f"Entry ID     {settings.entry_id or 'NOT SET: add FPL_ENTRY_ID to .env'}")
+    print(f"Data folder  {settings.data_dir}")
+
+
+def main(argv: list[str] | None = None) -> None:
+    """entry point"""
+    logging.basicConfig(level=logging.INFO,
+                        format="%(levelname)s %(name)s: %(message)s")
+    # one line per request is too noisy
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    parser = argparse.ArgumentParser(
+        prog="fpl", description="FPL projections and optimiser")
+    sub = parser.add_subparsers(dest="command", required=True)
+    for name, (func, help_text, arguments) in COMMANDS.items():
+        p = sub.add_parser(name, help=help_text)
+        for flags, kwargs in arguments:
+            p.add_argument(*flags, **kwargs)
+        p.set_defaults(func=func)
+    args = parser.parse_args(argv)
+    args.func(load_settings(), args)
