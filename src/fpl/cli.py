@@ -29,7 +29,7 @@ def arg(*flags, **kwargs):
     return flags, kwargs
 
 
-def open_df(settings: Settings):
+def open_db(settings: Settings):
     from fpl.storage import connect
 
     return connect(settings)
@@ -53,6 +53,21 @@ def cmd_doctor(settings: Settings, args) -> None:
     print(
         f"Entry ID     {settings.entry_id or 'NOT SET: add FPL_ENTRY_ID to .env'}")
     print(f"Data folder  {settings.data_dir}")
+
+
+@command("update", "Download the current season from the FPL API into the database")
+def cmd_update(settings: Settings, args) -> None:
+    from fpl.ingest.current import update_current
+
+    with open_db(settings) as con:
+        summary = update_current(FplClient(settings), con)
+    report.print_update(summary)
+
+
+@command("sql", "Run a SQL query on the database and print the result", arg("query"))
+def cmd_sql(settings: Settings, args) -> None:
+    with open_db(settings) as con:
+        print(report.table(con.execute(args.query).df()))
 
 
 def main(argv: list[str] | None = None) -> None:
