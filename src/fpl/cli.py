@@ -80,6 +80,20 @@ def cmd_check_scoring(settings: Settings, args) -> None:
     report.print_scoring_check(result)
 
 
+@command("load-history", "Download last season and the pre-deadline snapshots (under a minute)")
+def cmd_load_history(settings: Settings, args) -> None:
+    from fpl.ingest.history import load_states_from_fplcache, load_vaastav_season
+
+    with open_db(settings) as con:
+        past = load_states_from_fplcache(
+            settings, con, settings.history_season)
+        now = load_states_from_fplcache(
+            settings, con, settings.current_season, with_metadata=False)
+
+        results = load_vaastav_season(settings, con, settings.history_season)
+    report.print_history_load(past, now, results)
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,

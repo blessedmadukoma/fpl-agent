@@ -34,3 +34,11 @@ def print_scoring_check(result) -> None:
     else:
         print(f"{len(result.mismatches):,} MISMATCHES. First 20:")
         print(result.mismatches.head(20).to_string(index=False))
+
+
+def print_history_load(past: dict, now: dict, results: dict) -> None:
+    for s in (past, now):
+        print(f"{s['season']}: {s['gws']} pre-deadline snapshots "
+              f"(median {s['median_lead_h']:.1f} h before the deadline, max {s['max_lead_h']:.1f} h)")
+    print(f"{results['season']} results: {results['player_fixture_rows']:,} player-fixture rows, "
+          f"{results['player_gw_rows']:,} player-GW rows, {results['fixtures']} fixtures")

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import datetime as dt
 import gzip
 import json
 import logging
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any  # we'd need to change this, nothing must use Any
 
 import httpx
@@ -75,7 +76,7 @@ class FplClient:
         return self.get(f"entry/{entry_id}/event/{gw}/picks/")
 
     def _write_raw(self, path: str, data: Any) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(dt.UTC)
         slug = re.sub(r"[^a-z0-9]+", "_", path.lower()).strip("_")
         folder = self._settings.raw_dir / now.strftime("%Y-%m-%d")
         folder.mkdir(parents=True, exist_ok=True)

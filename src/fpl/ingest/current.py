@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pandas as pd
 
@@ -37,7 +38,7 @@ def update_current(client: FplClient, con) -> dict:
         [player_gw_frame(client.live(gw), gw, players, season) for gw in finished])
     next_gw = int(events.loc[~events.finished, "gw"].min())
     state = state_frame(boot, season, next_gw,
-                        snapshot_time=datetime.now(timezone.utc))
+                        snapshot_time=datetime.now(dt.UTC))
 
     rules = pd.DataFrame(
         [{"season": season, "game_config": json.dumps(boot["game_config"])}])
