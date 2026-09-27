@@ -24,3 +24,13 @@ def print_update(summary: dict) -> None:
         f"Finished GWs: {summary['finished_gws']} ({summary['player_gw_rows']} player-GW rows)")
     print(
         f"Next: GW{summary['next_gw']}, deadline {summary['next_deadline']:%a %d %b %Y %H:%M} UTC")
+
+
+def print_scoring_check(result) -> None:
+    print(f"Season {result.season}, source {result.source}: checked {result.checked:,} rows"
+          + (f", skipped {result.skipped:,} double-GW rows" if result.skipped else ""))
+    if result.mismatches.empty:
+        print("0 mismatches. The scoring function matches FPL exactly.")
+    else:
+        print(f"{len(result.mismatches):,} MISMATCHES. First 20:")
+        print(result.mismatches.head(20).to_string(index=False))

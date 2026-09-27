@@ -70,6 +70,16 @@ def cmd_sql(settings: Settings, args) -> None:
         print(report.table(con.execute(args.query).df()))
 
 
+@command("check-scoring", "Recompute every player's points and compare with FPL",
+         arg("--season", default="2026-27"))
+def cmd_check_scoring(settings: Settings, args) -> None:
+    from fpl.checks import check_scoring
+
+    with open_db(settings) as con:
+        result = check_scoring(con, args.season)
+    report.print_scoring_check(result)
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
