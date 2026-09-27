@@ -42,3 +42,10 @@ def print_history_load(past: dict, now: dict, results: dict) -> None:
               f"(median {s['median_lead_h']:.1f} h before the deadline, max {s['max_lead_h']:.1f} h)")
     print(f"{results['season']} results: {results['player_fixture_rows']:,} player-fixture rows, "
           f"{results['player_gw_rows']:,} player-GW rows, {results['fixtures']} fixtures")
+
+
+def print_backtest(model: str, season: str, first: int, last: int, metrics: pd.DataFrame, top: dict) -> None:
+    print(f"Model '{model}', {season} GW{first}-{last}")
+    print(table(metrics))
+    print(f"Top {top['top_k']} per GW: projected {top['projected']:.2f}, realised {top['realised']:.2f} "
+          f"(over-projection {top['projected'] - top['realised']:.2f})")

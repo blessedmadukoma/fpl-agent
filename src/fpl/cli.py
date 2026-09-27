@@ -94,6 +94,23 @@ def cmd_load_history(settings: Settings, args) -> None:
     report.print_history_load(past, now, results)
 
 
+@command("backtest", "Score a projection model on a past season",
+         arg("--model", default="shrunk_blend"), arg("--season",
+                                                     default=Settings.history_season),
+         arg("--from-gw", type=int, default=5), arg("--to-gw", type=int, default=38))
+def cmd_backtest(settings: Settings, args) -> None:
+    from fpl.backtest.replay import replay, summarise
+    from fpl.projections import registry
+
+    with open_db(settings) as con:
+        projector = registry.build(
+            args.model, con, args.season, first_gw=args.from_gw)
+        frame = replay(con, args.season, projector,
+                       range(args.from_gw, args.to_gw + 1))
+    report.print_backtest(args.model, args.season,
+                          args.from_gw, args.to_gw, *summarise(frame))
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
