@@ -49,3 +49,29 @@ def print_backtest(model: str, season: str, first: int, last: int, metrics: pd.D
     print(table(metrics))
     print(f"Top {top['top_k']} per GW: projected {top['projected']:.2f}, realised {top['realised']:.2f} "
           f"(over-projection {top['projected'] - top['realised']:.2f})")
+
+
+def names(ctx) -> pd.DataFrame:
+    """Player names, positions and club short names, indexed by element id."""
+    short = ctx.teams.set_index("team_id").short_name
+    frame = ctx.state.set_index("element")[
+        ["web_name", "position", "team", "now_cost", "status", "news"]].copy()
+    frame["club"] = frame.team.map(short)
+    return frame
+
+
+def print_team(team, ctx) -> None:
+    who = names(ctx)
+    print(f"{team.team_name} (entry {team.entry_id}), squad after GW{team.based_on_gw}, for GW{ctx.gw}")
+    print(f"Bank {money(team.bank)} | Free transfers {team.free_transfers}")
+    print(f"Chips available: {', '.join(team.chips_available) or 'none'}")
+    if team.chips_used:
+        print(f"Chips used: {', '.join(team.chips_used)}")
+    rows = []
+    for p in team.squad:
+        n = who.loc[p.element]
+        rows.append({"player": n.web_name, "pos": n.position, "club": n.club, "bought": money(p.purchase_price),
+                     "now": money(n.now_cost), "sell": money(p.selling_price), "status": n.status,
+                     "news": (n.news or "")[:40]})
+    print(table(pd.DataFrame(rows).sort_values(
+        "pos", key=lambda s: s.map(POSITION_ORDER))))

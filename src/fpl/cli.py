@@ -111,6 +111,15 @@ def cmd_backtest(settings: Settings, args) -> None:
                           args.from_gw, args.to_gw, *summarise(frame))
 
 
+@command("my-team", "Show my squad, bank, free transfers and chips as the solver sees them")
+def cmd_my_team(settings: Settings, args) -> None:
+    from fpl.team_state import current_team
+
+    with open_db(settings) as con:
+        ctx, team = current_team(con, FplClient(settings), entry_id(settings))
+    report.print_team(team, ctx)
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
