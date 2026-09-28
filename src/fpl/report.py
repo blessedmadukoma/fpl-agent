@@ -113,3 +113,11 @@ def print_recommendation(result) -> None:
         print("Planned later (not an action now): " + "; ".join(
             f"GW{g.gw}: " + ", ".join(f"{who.at[o, 'web_name']} -> {who.at[i, 'web_name']}"
                                       for o, i in zip(g.sell, g.buy)) for g in later))
+
+
+def print_runs(settled: int, history: pd.DataFrame) -> None:
+    print(f"Settled {settled} run(s).")
+    if history.empty:
+        print("No saved runs yet. Save one with: fpl recommend --save")
+    else:
+        print(table(history))

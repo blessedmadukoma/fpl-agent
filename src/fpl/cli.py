@@ -142,6 +142,15 @@ def cmd_recommend(settings: Settings, args) -> None:
     report.print_recommendation(result)
 
 
+@command("settle", "Fill in realised points for saved runs whose GW has finished")
+def cmd_settle(settings: Settings, args) -> None:
+    from fpl.runs import run_history, settle
+
+    with open_db(settings) as con:
+        settled = settle(con)
+        report.print_runs(settled, run_history(con))
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
