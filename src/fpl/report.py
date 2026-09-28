@@ -75,3 +75,41 @@ def print_team(team, ctx) -> None:
                      "news": (n.news or "")[:40]})
     print(table(pd.DataFrame(rows).sort_values(
         "pos", key=lambda s: s.map(POSITION_ORDER))))
+
+
+def print_recommendation(result) -> None:
+    who = names(result.ctx)
+    def label(p): return f"{who.at[p, 'web_name']} ({who.at[p, 'club']})"
+    first = result.plan.gws[0]
+    horizon = f"GW{result.plan.gws[0].gw}-{result.plan.gws[-1].gw}"
+    print(f"{result.team.team_name}: GW{result.ctx.gw} recommendation, horizon {horizon}")
+    print(
+        f"Bank {money(result.team.bank)} | Free transfers {result.team.free_transfers}")
+    print()
+    if first.buy:
+        ep_now = result.ep[first.gw]
+        for out, into in zip(first.sell, first.buy):
+            print(f"  Best transfer: OUT {label(out)} {money(result.team.selling_prices()[out])} (EP {ep_now[out]:.2f})"
+                  f"  ->  IN {label(into)} {money(who.at[into, 'now_cost'])} (EP {ep_now[into]:.2f})")
+        print(f"  Hits: {first.hits}. Gain over rolling the transfer, across {horizon}: {result.gain:+.2f} points "
+              f"(threshold {result.threshold:.1f})")
+        verdict = "MAKE the transfer(s)." if result.make_transfers else "gain below threshold: HOLD (roll the transfer)."
+        print(f"  Verdict: {verdict}")
+    else:
+        print("  No transfer improves the plan. HOLD.")
+    chosen = result.chosen.gws[0]
+    ep = result.ep[chosen.gw]
+    print()
+    print(
+        f"Starting XI for GW{chosen.gw} (expected points incl. captain: {chosen.expected_points:.1f})")
+    for p in chosen.xi:
+        tag = " (C)" if p == chosen.captain else " (V)" if p == chosen.vice else ""
+        print(f"  {who.at[p, 'position']}  {label(p):<28} {ep[p]:5.2f}{tag}")
+    print("Bench, in order: " +
+          ", ".join(f"{label(p)} {ep[p]:.2f}" for p in chosen.bench))
+    later = [g for g in result.plan.gws[1:] if g.buy]
+    if later:
+        print()
+        print("Planned later (not an action now): " + "; ".join(
+            f"GW{g.gw}: " + ", ".join(f"{who.at[o, 'web_name']} -> {who.at[i, 'web_name']}"
+                                      for o, i in zip(g.sell, g.buy)) for g in later))

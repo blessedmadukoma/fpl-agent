@@ -2078,7 +2078,9 @@ def optimise(ep: pd.DataFrame, players: pd.DataFrame, team: TeamState, settings:
     sell_value = {p: team.selling_prices().get(p, int(info.at[p, "now_cost"])) for p in pool}
 
     model = pulp.LpProblem("fpl", pulp.LpMaximize)
-    per_player = lambda name: model.add_variable_dicts(name, (pool, gws), cat="Binary")
+    per_player = lambda name: model.add_variable_dicts(
+        name, (pool, gws), lowBound=0, upBound=1, cat="Binary"
+    )
     per_gw = lambda name, **kwargs: model.add_variable_dicts(name, gws, **kwargs)
     x, y, c, buy, sell = (per_player(n) for n in ("squad", "xi", "captain", "buy", "sell"))
     free = per_gw("free", lowBound=0, upBound=settings.max_free_transfers, cat="Integer")
@@ -2138,9 +2140,9 @@ def optimise(ep: pd.DataFrame, players: pd.DataFrame, team: TeamState, settings:
     penalties = pulp.lpSum(weight[g] * settings.hit_cost * hits[g] for g in gws)
     model += points - penalties + settings.free_transfer_bonus * pulp.lpSum(free[g] for g in gws)
 
-    status = model.solve(_solver(settings))
-    if pulp.LpStatus[status] != "Optimal":
-        raise RuntimeError(f"Solver finished with status {pulp.LpStatus[status]}")
+    solve_stats = model.solve(_solver(settings))
+    if solve_stats.status != pulp.LpSolveStatus.Optimal:
+        raise RuntimeError(f"Solver finished with status {solve_stats.status_str}")
 
     plan = Plan(objective=float(pulp.value(points - penalties)))
     for g in gws:

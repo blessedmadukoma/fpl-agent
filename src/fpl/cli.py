@@ -120,6 +120,28 @@ def cmd_my_team(settings: Settings, args) -> None:
     report.print_team(team, ctx)
 
 
+@command("recommend", "Recommend transfers, XI and captain for the next GW",
+         arg("--model", default="shrunk_blend"), arg("--horizon", type=int, default=4),
+         arg("--threshold", type=float, default=2.0,
+             help="minimum gain over rolling, in points"),
+         arg("--max-hits", type=int, default=0,
+             help="hits allowed per GW (default 0)"),
+         arg("--save", action="store_true", help="record the run, to settle after the GW (step 7)"))
+def cmd_recommend(settings: Settings, args) -> None:
+    from fpl.optimise.solver import SolverSettings
+    from fpl.recommend import recommend
+
+    solver = SolverSettings(max_hits_per_gw=args.max_hits)
+    with open_db(settings) as con:
+        result = recommend(con, FplClient(settings), entry_id(settings), args.model, args.horizon,
+                           args.threshold, solver)
+        if args.save:
+            from fpl.runs import save_run
+
+            print(f"Saved as run {save_run(con, result, args.model)}.\n")
+    report.print_recommendation(result)
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
