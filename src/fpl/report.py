@@ -121,3 +121,25 @@ def print_runs(settled: int, history: pd.DataFrame) -> None:
         print("No saved runs yet. Save one with: fpl recommend --save")
     else:
         print(table(history))
+
+
+def print_odds_load(summary: dict) -> None:
+    print(
+        f"{summary['season']}: odds for {summary['fixtures']} fixtures ({summary['upcoming']} upcoming)")
+
+
+def print_fixture_ticker(view: pd.DataFrame, ctx) -> None:
+    """Clean-sheet % per team per GW; '*' marks bookmaker odds, no mark means team ratings."""
+    short = ctx.teams.set_index("team_id").short_name
+    view = view.assign(club=view.team.map(short), opp=view.opponent.map(short))
+
+    def cell(
+        r): return f"{r.opp}({'H' if r.home else 'A'}) {100 * r.p_clean_sheet:3.0f}%{'*' if r.source == 'odds' else ' '}"
+    grid = view.assign(cell=view.apply(cell, axis=1)).pivot_table(
+        index="club", columns="gw", values="cell", aggfunc=" / ".join)
+    grid["avg"] = view.groupby("club").p_clean_sheet.mean()
+    grid = grid.sort_values("avg", ascending=False)
+    grid["avg"] = (100 * grid["avg"]).map("{:.0f}%".format)
+    print(
+        f"Clean-sheet chance by GW from GW{ctx.gw} (* = bookmaker odds, otherwise team ratings)")
+    print(grid.to_string())

@@ -151,6 +151,37 @@ def cmd_settle(settings: Settings, args) -> None:
         report.print_runs(settled, run_history(con))
 
 
+@command("odds", "Download bookmaker odds and turn them into expected goals per fixture")
+def cmd_odds(settings: Settings, args) -> None:
+    from fpl.ingest.odds import load_odds
+
+    with open_db(settings) as con:
+        for season in (Settings.history_season, Settings.current_season):
+            report.print_odds_load(load_odds(settings, con, season))
+
+
+@command("fixtures", "Clean-sheet chance per team for the next GWs", arg("--gws", type=int, default=6))
+def cmd_fixtures(settings: Settings, args) -> None:
+    from fpl.context import load_context, next_gw
+    from fpl.projections.teams import fixture_rates, team_view
+
+    with open_db(settings) as con:
+        ctx = load_context(con, Settings.current_season, next_gw(con))
+        view = team_view(fixture_rates(
+            con, ctx, list(range(ctx.gw, ctx.gw + args.gws))))
+    report.print_fixture_ticker(view, ctx)
+
+
+@command("backtest-teams", "Score clean-sheet probabilities on a past season",
+         arg("--season", default=Settings.history_season))
+def cmd_backtest_teams(settings: Settings, args) -> None:
+    from fpl.backtest.teams import clean_sheet_backtest
+
+    with open_db(settings) as con:
+        print(report.table(clean_sheet_backtest(
+            con, args.season, range(5, 39)), "{:.4f}"))
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
