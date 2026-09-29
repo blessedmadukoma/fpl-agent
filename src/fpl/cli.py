@@ -182,6 +182,15 @@ def cmd_backtest_teams(settings: Settings, args) -> None:
             con, args.season, range(5, 39)), "{:.4f}"))
 
 
+@command("backtest-minutes", "Score the minutes model on GW20-38 after training on GW2-19",
+         arg("--season", default=Settings.history_season))
+def cmd_backtest_minutes(settings: Settings, args) -> None:
+    from fpl.backtest.minutes import minutes_backtest
+
+    with open_db(settings) as con:
+        print(report.table(minutes_backtest(con, args.season), "{:.4f}"))
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
