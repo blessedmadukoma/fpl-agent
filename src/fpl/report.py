@@ -143,3 +143,16 @@ def print_fixture_ticker(view: pd.DataFrame, ctx) -> None:
     print(
         f"Clean-sheet chance by GW from GW{ctx.gw} (* = bookmaker odds, otherwise team ratings)")
     print(grid.to_string())
+
+
+def print_projections(rows: pd.DataFrame, ctx, top: int, position: str | None) -> None:
+    short = ctx.teams.set_index("team_id").short_name
+    rows = rows.assign(player=rows.element.map(
+        names(ctx).web_name), club=rows.team.map(short))
+    if position:
+        rows = rows[rows.position == position.upper()]
+    columns = ["player", "club", "position", "p_start", "p_60", "pts_appearance", "pts_goals", "pts_assists",
+               "pts_clean_sheet", "pts_defcon", "pts_bonus", "ep"]
+    print(f"GW{ctx.gw} expected points, top {top}" +
+          (f" {position.upper()}" if position else ""))
+    print(table(rows.sort_values("ep", ascending=False)[columns].head(top)))

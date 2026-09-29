@@ -191,6 +191,19 @@ def cmd_backtest_minutes(settings: Settings, args) -> None:
         print(report.table(minutes_backtest(con, args.season), "{:.4f}"))
 
 
+@command("projections", "Top players for the next GW with every points component",
+         arg("--top", type=int, default=25), arg("--position", help="GKP, DEF, MID or FWD"))
+def cmd_projections(settings: Settings, args) -> None:
+    from fpl.context import load_context, next_gw
+    from fpl.projections import registry
+
+    with open_db(settings) as con:
+        ctx = load_context(con, Settings.current_season, next_gw(con))
+        rows = registry.build("full", con, Settings.current_season,
+                              first_gw=ctx.gw).project(ctx, [ctx.gw])
+    report.print_projections(rows, ctx, args.top, args.position)
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
