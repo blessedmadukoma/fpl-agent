@@ -156,3 +156,16 @@ def print_projections(rows: pd.DataFrame, ctx, top: int, position: str | None) -
     print(f"GW{ctx.gw} expected points, top {top}" +
           (f" {position.upper()}" if position else ""))
     print(table(rows.sort_values("ep", ascending=False)[columns].head(top)))
+
+
+def print_chips(values: pd.DataFrame, team) -> None:
+    print(
+        f"Chip values for {team.team_name}'s current squad (expected points the chip adds)")
+    print(table(values, "{:.1f}"))
+    print()
+    for chip in ("triple_captain", "bench_boost", "free_hit"):
+        best = values.loc[values[chip].idxmax()]
+        print(
+            f"Best GW for {chip.replace('_', ' ')}: GW{int(best.gw)} (+{best[chip]:.1f})")
+    print(
+        f"Chips still available: {', '.join(team.chips_available) or 'none'}")

@@ -204,6 +204,22 @@ def cmd_projections(settings: Settings, args) -> None:
     report.print_projections(rows, ctx, args.top, args.position)
 
 
+@command("chips", "Value of Triple Captain, Bench Boost and Free Hit in each GW up to GW19",
+         arg("--model", default="full"), arg("--to-gw", type=int, default=19))
+def cmd_chips(settings: Settings, args) -> None:
+    from fpl.optimise.chips import chip_values
+    from fpl.projections import registry
+    from fpl.projections.horizon import horizon_table
+    from fpl.team_state import current_team
+
+    with open_db(settings) as con:
+        ctx, team = current_team(con, FplClient(settings), entry_id(settings))
+        projector = registry.build(
+            args.model, con, Settings.current_season, first_gw=ctx.gw)
+        ep = horizon_table(ctx, projector, list(range(ctx.gw, args.to_gw + 1)))
+    report.print_chips(chip_values(ep, ctx.state, team), team)
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
