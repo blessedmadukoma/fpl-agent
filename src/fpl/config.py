@@ -18,6 +18,14 @@ class Settings:
     history_season: str = "2025-26"
     fpl_base_url: str = ""
 
+    ollama_api_key: str = ""
+    ollama_model: str = "gpt-oss:120b"
+    ollama_base_url: str = "http://localhost:11434/v1/"
+
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_base_url: str = ""
+
     @property
     def db_path(self) -> Path:
         return self.data_dir / "fpl.duckdb"
@@ -44,10 +52,24 @@ def load_settings() -> Settings:
     history_season = os.getenv("HISTORY_SEASON", "")
     fpl_base_url = os.getenv("FPL_BASE_URL", "")
 
+    ollama_api_key = os.getenv("OLLAMA_API_KEY", "")
+    ollama_model = os.getenv("OLLAMA_MODEL", "")
+    ollama_base_url = os.getenv("OLLAMA_BASE_URL", "")
+
+    langfuse_public_key = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+    langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY", "")
+    langfuse_base_url = os.getenv("LANGFUSE_BASE_URL", "")
+
     return Settings(
         entry_id=int(entry) if entry else None,
         data_dir=data_dir,
         current_season=current_season,
         history_season=history_season,
-        fpl_base_url=fpl_base_url
+        fpl_base_url=fpl_base_url,
+        ollama_base_url=ollama_base_url,
+        ollama_api_key=ollama_api_key,
+        ollama_model=ollama_model,
+        langfuse_base_url=langfuse_base_url,
+        langfuse_public_key=langfuse_public_key,
+        langfuse_secret_key=langfuse_secret_key
     )

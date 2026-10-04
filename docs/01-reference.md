@@ -33,7 +33,7 @@ example "§D".
 | H   | Formulas, and the code that implements each |
 | I   | Reference numbers (replay)                  |
 | J   | GW6 calendar                                |
-| K   | What not to build yet                       |
+| K   | Deferred LLM and deployment work            |
 
 ---
 
@@ -49,8 +49,9 @@ odds    ─┘                                             │
 ```
 
 **The one rule: a solver picks the team, never an LLM.** Squad selection is a constrained
-optimisation problem, and a mixed-integer linear program (MILP) solves it exactly. An LLM can
-only read news (Step 13, after GW6).
+optimisation problem, and a mixed-integer linear program (MILP) solves it exactly. The Part 3 LLM
+may choose read-only tools, explain their deterministic output and extract news claims. It must
+not calculate projections or select the squad.
 
 **Leakage guard.** Every projection reads one `GwContext`: the players' state at the deadline,
 plus results of earlier GWs only. A model that reads only a `GwContext` cannot see the future.
@@ -466,16 +467,22 @@ Kigali is UTC+2 all year.
 
 ---
 
-## K. What not to build yet
+## K. Deferred LLM and deployment work
 
-These are deferred until after GW6. Step 13 says when and how to add them.
+Part 3 says when and how to add these without changing the deterministic projection and solver
+boundary.
 
-- **An LLM news layer.** When you add it, it outputs fixed categories with a verbatim quote,
-  never probabilities, because verbalised LLM confidence is overconfident \[17\]. Ollama Cloud
-  supports neither structured outputs nor `tool_choice` \[18\].
+- **A read-only conversational layer.** It chooses typed FPL tools and explains their output. It
+  does not run arbitrary SQL, calculate expected points or make transfers.
+- **An LLM news layer.** It outputs fixed categories with a verbatim quote, never probabilities,
+  because verbalised LLM confidence is overconfident \[17\]. Ollama supports tool calling,
+  `tool_choice` and schema-based structured output. Validate every structured reply and every
+  quotation in application code \[18\].
 - **A server, Docker and cron.** On a laptop, run `fpl update` when you work.
-- **An agent framework, auto-submission or a web UI.** The pipeline is a fixed sequence, and a
-  terminal is enough.
+- **An agent framework or auto-submission.** The first agent loop is small enough to write
+  directly, and transfer submission remains a manual action.
+- **A web UI.** Add it only after the CLI agent and its evaluations are stable. It must call the
+  same application service as the CLI.
 
 ---
 
@@ -528,6 +535,7 @@ https://digitalhub.fifa.com/m/3123d37097318f7f/original/Men-s-International-Matc
 \[17\] M. Xiong et al., "Can LLMs express their uncertainty? An empirical evaluation of confidence
 elicitation in LLMs," in _Proc. ICLR_, 2024. arXiv:2306.13063.
 
-\[18\] Ollama, "Structured outputs" and "OpenAI compatibility."
+\[18\] Ollama, "Tool calling," "Structured outputs" and "OpenAI compatibility."
+https://docs.ollama.com/capabilities/tool-calling,
 https://docs.ollama.com/capabilities/structured-outputs,
 https://docs.ollama.com/api/openai-compatibility

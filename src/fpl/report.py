@@ -169,3 +169,20 @@ def print_chips(values: pd.DataFrame, team) -> None:
             f"Best GW for {chip.replace('_', ' ')}: GW{int(best.gw)} (+{best[chip]:.1f})")
     print(
         f"Chips still available: {', '.join(team.chips_available) or 'none'}")
+
+
+def print_snapshot(result: dict) -> None:
+    git = result["git"]
+    commit = git["commit"] or "unavailable"
+    if git["dirty"] is None:
+        worktree = "unknown"
+    else:
+        worktree = "dirty" if git["dirty"] else "clean"
+
+    print(f"Snapshot {result['snapshot_id']} ({result['validation_result']['status']})")
+    print(f"Path          {result['final_path']}")
+    print(f"Season / GW   {result['season']} / GW{result['gw']}")
+    print(f"Database SHA  {result['database_file']['sha256']}")
+    print(f"Team SHA      {result['team_file']['sha256']}")
+    print(f"Raw files     {result['raw_file_count']}")
+    print(f"Git           {commit} ({worktree})")

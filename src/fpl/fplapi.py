@@ -7,6 +7,7 @@ import logging
 import re
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any  # we'd need to change this, nothing must use Any
 
 import httpx
@@ -22,12 +23,17 @@ class FplClient:
 
         self._settings = settings
         self._save_raw = save_raw
+        self._saved_raw_paths: list[Path] = []
         self._http = httpx.Client(
             base_url=settings.fpl_base_url,
             headers={"User-Agent": settings.user_agent},
             timeout=30.0,
             follow_redirects=True,
         )
+
+    @property
+    def saved_raw_paths(self) -> tuple[Path, ...]:
+        return tuple(self._saved_raw_paths)
 
     def get(self, path: str, retries: int = 3) -> Any:
         """GET one endpoint, e.g. "bootstrap-static/". Retries on network errors and 5xx."""
@@ -75,7 +81,7 @@ class FplClient:
     def entry_picks(self, entry_id: int, gw: int) -> dict:
         return self.get(f"entry/{entry_id}/event/{gw}/picks/")
 
-    def _write_raw(self, path: str, data: Any) -> None:
+    def _write_raw(self, path: str, data: Any) -> Path:
         now = datetime.now(dt.UTC)
         slug = re.sub(r"[^a-z0-9]+", "_", path.lower()).strip("_")
         folder = self._settings.raw_dir / now.strftime("%Y-%m-%d")
@@ -84,3 +90,5 @@ class FplClient:
         target = folder / f"{now.strftime('%H%M%S')}_{slug}.json.gz"
         with gzip.open(target, "wt", encoding="utf-8") as fh:
             json.dump(data, fh)
+        self._saved_raw_paths.append(target)
+        return target

@@ -5,17 +5,20 @@ Tables that hold several seasons have a `season` column. A loader replaces only 
 
 from __future__ import annotations
 
-from sys import executable
+from pathlib import Path
 
 import duckdb
 import pandas as pd
-from _duckdb import DuckDBPyConnection, unregister
 
 from fpl.config import Settings
 
 
 def connect(settings: Settings) -> duckdb.DuckDBPyConnection:
-    return duckdb.connect(str(settings.db_path))
+    return connect_path(settings.db_path)
+
+
+def connect_path(path: Path, read_only: bool = False) -> duckdb.DuckDBPyConnection:
+    return duckdb.connect(str(path), read_only=read_only)
 
 
 def table_exists(con: duckdb.DuckDBPyConnection, table: str) -> bool:

@@ -44,7 +44,7 @@ def entry_id(settings: Settings) -> int:
 @command("doctor", "Check the Python environment, the API and your settings")
 def cmd_doctor(settings: Settings, args) -> None:
     print(f"Python       {platform.python_version()}")
-    for package in ["httpx", "duckdb", "pandas", "numpy", "scipy", "scikit-learn", "pulp", "highspy"]:
+    for package in ["httpx", "duckdb", "pandas", "numpy", "scipy", "scikit-learn", "pulp", "highspy", "openai", "pydantic", "langfuse"]:
         print(f"{package:<12} {version(package)}")
     boot = FplClient(settings, save_raw=False).bootstrap()
     next_event = next(e for e in boot["events"] if not e["finished"])
@@ -53,6 +53,10 @@ def cmd_doctor(settings: Settings, args) -> None:
     print(
         f"Entry ID     {settings.entry_id or 'NOT SET: add FPL_ENTRY_ID to .env'}")
     print(f"Data folder  {settings.data_dir}")
+    print(
+        f"Ollama URL and model configured: {'yes' if settings.ollama_base_url and settings.ollama_model else 'No'}")
+    print(
+        f"LangFuse URL and keys: {'yes' if settings.langfuse_base_url and settings.langfuse_public_key and settings.langfuse_secret_key  else 'No'}")
 
 
 @command("update", "Download the current season from the FPL API into the database")
@@ -218,6 +222,31 @@ def cmd_chips(settings: Settings, args) -> None:
             args.model, con, Settings.current_season, first_gw=ctx.gw)
         ep = horizon_table(ctx, projector, list(range(ctx.gw, args.to_gw + 1)))
     report.print_chips(chip_values(ep, ctx.state, team), team)
+
+
+@command("freeze-eval", "Freeze current",
+         arg("--name", default="pre-gw6-baseline"))
+def cmd_create_snapshot(settings: Settings, args) -> None:
+    from fpl.evals.snapshot import create_snapshot
+    from fpl.ingest.current import update_current
+    from fpl.team_state import current_team
+
+    client = FplClient(settings)
+    with open_db(settings) as con:
+        update_summary = update_current(client, con)
+        ctx, team = current_team(con, client, entry_id(settings))
+
+    # create snapshot
+    response = create_snapshot(
+        ctx,
+        settings,
+        name=args.name,
+        team=team,
+        update_summary=update_summary,
+        raw_paths=client.saved_raw_paths,
+    )
+
+    report.print_snapshot(response)
 
 
 def main(argv: list[str] | None = None) -> None:

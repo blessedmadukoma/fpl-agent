@@ -3,8 +3,11 @@
 Version 3, 26 September 2026. Part 2 continues from the end of Part 1, when all 15 tests pass and
 `fpl recommend` works. It replaces the skeleton projection with a model built from components
 (minutes, team strength, goals, assists, clean sheets, DefCon, bonus). The new model is used only
-after it beats the skeleton in the backtest. The last two steps are the GW6 deadline runbook and
-what to build after GW6.
+after it beats the skeleton in the backtest. The last step is the GW6 deadline runbook.
+
+Continue with **03-agent-build-part3.md** for Step 13 onwards: freeze an evaluation snapshot, add a
+read-only LLM layer, trace it, run fixed evaluations, add the news layer and close the remaining
+model and deployment gaps.
 
 The same conventions as Part 1 apply:
 
@@ -19,7 +22,6 @@ The same conventions as Part 1 apply:
 | 10   | the full points model and the gate | a model that beats the skeleton on every gate number          |
 | 11   | chip values up to GW19             | the best GW for each chip                                     |
 | 12   | the GW6 deadline runbook           | exact commands and times                                      |
-| 13   | what comes after GW6               | news layer, server, backlog                                   |
 
 ---
 
@@ -1007,7 +1009,7 @@ not choose between them, so it does not count in the gate.
 
 **Known gap.** The backtest cannot test the model at GW6 of a season, because 2024/25 is not
 loaded. For 2025/26 GW5–19 it would have had no last-season priors. Live at GW6 it does have
-them. Step 13 lists how to close this gap.
+them. Part 3 Step 19 closes this gap.
 
 ### 10.2 Look at the projections
 
@@ -1242,7 +1244,7 @@ time in brackets.
 | Any day until 8 Oct                     | `fpl update` once a day (optional)                                                                                                                                                                                 | saves daily snapshots in `data/raw/`; keeps flags and prices current                                    |
 | **Fri 9 Oct, 17:30 (19:30)**            | `fpl update && fpl odds && fpl fixtures`                                                                                                                                                                           | the press conferences are done and the GW6 odds are out; check that GW6 cells now show `*`              |
 | Fri 9 Oct, 17:45 (19:45)                | `fpl recommend --model full --save`                                                                                                                                                                                | the transfer decision                                                                                   |
-| Fri 9 Oct, 18:00 (20:00)                | Check by hand, for every player in the XI and every transfer target: FFScout team news \[10\] or RotoWire \[11\]. Use `fpl my-team` for your squad's flags, and `fpl projections --top 60` (`p_start`) for targets | the model cannot read press-conference quotes yet (Step 13)                                             |
+| Fri 9 Oct, 18:00 (20:00)                | Check by hand, for every player in the XI and every transfer target: FFScout team news \[10\] or RotoWire \[11\]. Use `fpl my-team` for your squad's flags, and `fpl projections --top 60` (`p_start`) for targets | the model cannot read press-conference quotes yet (Part 3 Step 20)                                      |
 | **Fri 9 Oct, before 22:30 (Sat 00:30)** | **Make the transfer on the FPL site, if the verdict is MAKE**                                                                                                                                                      | the last price change before the deadline is at 23:00 UTC                                               |
 | Sat 10 Oct, 08:00–09:30 (10:00–11:30)   | `fpl update && fpl projections --top 60`                                                                                                                                                                           | captain, vice and bench on the latest flags; change a transfer only if a player was ruled out overnight |
 | **Sat 10 Oct, 10:00 (12:00)**           | **Deadline**                                                                                                                                                                                                       |                                                                                                         |
@@ -1264,91 +1266,6 @@ captain, the vice-captain and the bench order yourself, from the `ep` column of
 
 **Every GW after this one:** run the same sequence against that GW's deadline. The
 `events` table has every deadline: `fpl sql "select gw, deadline from events where season = '2026-27' and not finished"`.
-
----
-
-## Step 13 — After GW6
-
-Build these in this order, and only after GW6. Each one must beat the current system in a paired
-comparison before you keep it (§B).
-
-### 13.1 Close the early-season gap in the backtest
-
-Load 2024/25 from vaastav and fplcache, as in Step 3. This needs a `--season` option on
-`load-history`, and `registry.build` must pass `2024-25` as the previous season for `2025-26`.
-Then backtest `full` on 2025/26 GW5–19, with last-season priors. That tells you how good the model is at this point of a season. Tune
-these on that range, with the backtest:
-
-- `PRIOR_90S` (6)
-- `SHRINK_APPEARANCES` (4)
-- `PREVIOUS_SEASON_WEIGHT` (0.5)
-- the threshold (2)
-
-### 13.2 The news layer (LLM)
-
-Its job is to turn press-conference quotes into facts that the flags do not yet show. The design,
-from §K:
-
-1. **Retrieval.** Search for each club's press conference in the 60 hours before a deadline
-   (Tavily: 1,000 free credits a month; about 30–40 credits a sweep).
-2. **Extraction.** For each article, the LLM returns records of `{player, claim, speaker, quote}`.
-   `claim` is one of:
-
-   ```
-   ruled_out, doubt, back_in_training, available, expected_start, expected_bench, minutes_limited
-   ```
-
-   Keep a claim only if `quote` appears word for word in the article.
-
-3. **Ollama Cloud** limits (§K): put the JSON schema in the prompt, validate the reply with
-   Pydantic, and retry once on failure.
-4. **Use.** Only two claims act at first, and only from a manager's quote newer than the player's
-   `news_added`:
-   - `ruled_out` caps `p_start` at 0.05;
-   - `expected_bench` halves `p_start`.
-5. **Measure.** Add a `--no-news` switch. Save both runs, and compare them with `fpl settle`
-   after each GW.
-
-This is a new module, `projections/news.py`. Apply it to the output of
-`MinutesModel.predict` before `add_components`. The rest of the code does not change.
-
-### 13.3 A server, when you want hourly snapshots
-
-A laptop that sleeps misses data. When that matters, use any small VPS:
-
-Push the repo to GitHub first. Then, on the server, replace `YOUR_REPO_URL` with its URL:
-
-```bash
-git clone YOUR_REPO_URL ~/fpl-agent && cd ~/fpl-agent
-python3 -m venv .venv && .venv/bin/pip install -e .
-cp .env.example .env
-```
-
-Set `FPL_ENTRY_ID` in `.env`. `data/` is not in git, so build the database again:
-
-```bash
-.venv/bin/fpl update && .venv/bin/fpl load-history && .venv/bin/fpl odds
-crontab -e
-```
-
-```cron
-17 *    * * *  cd ~/fpl-agent && .venv/bin/fpl update >> data/update.log 2>&1
-*/15 6-9 * * 6 cd ~/fpl-agent && .venv/bin/fpl update >> data/update.log 2>&1
-```
-
-- The second line updates every 15 minutes on Saturday mornings. Set the server clock to UTC.
-
-### 13.4 Backlog, most useful first
-
-1. **Double and blank GWs.** The first likely blank is GW30. Minutes per fixture already works,
-   but check `fixture_counts`, and check the solver on a GW with 0 or 2 fixtures.
-2. **Chips inside the solver.** Treat Wildcard and Free Hit as solver options for a planned GW,
-   instead of a separate table.
-3. **Bench order that knows autosubs.** Weight bench EP by the chance that a starter plays 0
-   minutes.
-4. **Penalty and set-piece takers.** Use `penalties_order` as an attacking feature.
-5. **A season replay of the solver.** Run the solver GW by GW over 2025/26, to tune the horizon,
-   the decay and the threshold on realised points.
 
 ---
 

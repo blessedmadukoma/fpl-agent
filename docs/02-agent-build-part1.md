@@ -79,7 +79,7 @@ The code follows five rules:
 
 You made folders plus `.env`, `compose.yml` and a `Dockerfile` from the previous guide. Docker is not
 needed on a laptop. If that folder is `~/fpl-agent`, rename it with `mv ~/fpl-agent ~/fpl-old`, so that
-you start clean. Moving to a server comes later (Step 13).
+you start clean. Moving to a server comes later (Part 3 Step 21).
 
 ### 0.2 Check the tools
 
