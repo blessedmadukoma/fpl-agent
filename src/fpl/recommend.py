@@ -39,6 +39,20 @@ class Recommendation:
         return self.plan if self.make_transfers else self.hold
 
 
+def recommend_from_projections(
+    ctx: GwContext,
+    team: TeamState,
+    ep: pd.DataFrame,
+    settings: SolverSettings,
+    threshold: float,
+) -> Recommendation:
+    """Compare transfers with holding the first GW using prepared projections."""
+    plan = optimise(ep, ctx.state, team, settings)
+    hold = optimise(ep, ctx.state, team, replace(settings, hold_first_gw=True))
+
+    return Recommendation(ctx, team, ep, plan, hold, threshold)
+
+
 def recommend(con, client: FplClient, entry_id: int, model: str = "shrunk_blend", horizon: int = 4,
               threshold: float = 2.0, settings: SolverSettings = SolverSettings()) -> Recommendation:
     ctx, team = current_team(con, client, entry_id)
@@ -46,7 +60,7 @@ def recommend(con, client: FplClient, entry_id: int, model: str = "shrunk_blend"
     ep = horizon_table(ctx, registry.build(
         model, con, Settings.current_season, first_gw=ctx.gw), gws)
 
-    plan = optimise(ep, ctx.state, team, settings)
-    hold = optimise(ep, ctx.state, team, replace(settings, hold_first_gw=True))
+    recommendation = recommend_from_projections(
+        ctx, team, ep, settings, threshold)
 
-    return Recommendation(ctx, team, ep, plan, hold, threshold)
+    return recommendation
