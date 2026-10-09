@@ -406,6 +406,11 @@ def test_dispatch_includes_recommendation_and_rejects_unknown_tools():
 def prepare_legal_squad(frozen_team):
     # Give owned players distinct clubs and add four equal-price stars from one club.
     with connect_path(frozen_team.database_path) as con:
+        con.executemany(
+            "insert into teams values ('2026-27', ?, ?)",
+            [(club_id, f"Club {club_id}") for club_id in range(4, 16)]
+            + [(99, "Star Club")],
+        )
         con.execute(
             "update state set team = element, now_cost = 50, ep_next = 2 where season = '2026-27' and gw = 6")
         con.executemany(
@@ -461,6 +466,7 @@ def test_recommendation_selects_plan_using_threshold(frozen_team, threshold, mak
     assert result.make_transfers is make_transfers
     assert bool(result.selected_gw_plans[0].buys) is make_transfers
     assert result.allowed_hits == 0
+    referenced_elements = set()
     for plan in result.selected_gw_plans:
         assert len(plan.team_xi) == 11
         assert len(plan.ordered_bench) == 4
@@ -469,6 +475,17 @@ def test_recommendation_selects_plan_using_threshold(frozen_team, threshold, mak
         assert plan.vice_captain in plan.team_xi
         assert plan.captain != plan.vice_captain
         assert plan.hits == 0
+        referenced_elements.update(plan.buys + plan.sells + plan.team_xi + plan.ordered_bench)
+    player_details = {player.element_id: player for player in result.players}
+    assert len(player_details) == len(result.players)
+    assert set(player_details) == referenced_elements
+    assert player_details[15].player_name == "Player 15"
+    assert player_details[15].club == "Club 15"
+    transferred_stars = set(player_details) & {16, 17, 18, 19}
+    assert transferred_stars
+    for element in transferred_stars:
+        assert player_details[element].player_name == f"Star {element}"
+        assert player_details[element].club == "Star Club"
     payload = json.loads(result.model_dump_json())
     assert payload["make_transfers"] is make_transfers
     assert "ctx" not in payload

@@ -216,5 +216,6 @@ class RecommendationResult(SnapshotMetadata):
     hold_objective: float
     gain: float
     make_transfers: bool
+    players: list[PlayerDetails]
     selected_gw_plans: list[SelectedGwPlan]
     assumptions: list[str]

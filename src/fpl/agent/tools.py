@@ -37,7 +37,7 @@ from fpl.team_state import TeamState
 
 
 def get_my_team(snapshot_context, con: duckdb.DuckDBPyConnection) -> MyTeamSchema:
-    """Return the frozen squad with player and club details.
+    """Return the frozen Fantasy Premier League squad, remaining transfer budget (“bank”), free transfers and chips. Bank and player prices are stored in tenths of a million pounds.
 
     Combine the loaded TeamState with state and teams rows from the snapshot
     database. Preserve squad order and keep prices in tenths of a million pounds.
@@ -396,6 +396,20 @@ def get_recommendation(snapshot_context, con: duckdb.DuckDBPyConnection, request
         )
         for gw_plan in recommendation.chosen.gws
     ]
+
+    element_ids = set()
+
+    for plan in selected_gw_plans:
+        element_ids.update(plan.buys)
+        element_ids.update(plan.sells)
+        element_ids.update(plan.team_xi)
+        element_ids.update(plan.ordered_bench)
+
+    player_details = [
+        _player_details(con, snapshot_context["manifest"], element_id)
+        for element_id in sorted(element_ids)
+    ]
+
     return RecommendationResult(
         **_metadata(snapshot_context),
         model=request.model,
@@ -407,6 +421,7 @@ def get_recommendation(snapshot_context, con: duckdb.DuckDBPyConnection, request
         gain=recommendation.gain,
         make_transfers=recommendation.make_transfers,
         selected_gw_plans=selected_gw_plans,
+        players=player_details,
         assumptions=[
             "Uses frozen prices, squad and projections; no transfer is executed.",
             "The hold plan forbids transfers in the first GW only.",

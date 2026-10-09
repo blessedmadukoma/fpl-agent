@@ -9,6 +9,7 @@ import argparse
 import logging
 import platform
 from importlib.metadata import version
+from pathlib import Path
 
 from fpl import report
 from fpl.config import Settings, load_settings
@@ -247,6 +248,20 @@ def cmd_create_snapshot(settings: Settings, args) -> None:
     )
 
     report.print_snapshot(response)
+
+
+@command(
+    "ask",
+    "Answer an FPL question using a frozen snapshot",
+    arg("question"),
+    arg("--snapshot", type=Path, required=True),
+)
+def ask_model(settings: Settings, args):
+    from fpl.agent.loop import agent_loop
+
+    answer = agent_loop(settings, args.question, args.snapshot)
+    # report.print_model_answer(answer)
+    print(answer)
 
 
 def main(argv: list[str] | None = None) -> None:
