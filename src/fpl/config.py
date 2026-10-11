@@ -25,6 +25,7 @@ class Settings:
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
     langfuse_base_url: str = ""
+    langfuse_tracing_enabled: bool = True
 
     @property
     def db_path(self) -> Path:
@@ -59,6 +60,17 @@ def load_settings() -> Settings:
     langfuse_public_key = os.getenv("LANGFUSE_PUBLIC_KEY", "")
     langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY", "")
     langfuse_base_url = os.getenv("LANGFUSE_BASE_URL", "")
+    _raw_tracing = os.getenv(
+        "LANGFUSE_TRACING_ENABLED", "true").strip().lower()
+    if _raw_tracing in ("1", "true", "yes", "on"):
+        langfuse_tracing_enabled = True
+    elif _raw_tracing in ("0", "false", "no", "off"):
+        langfuse_tracing_enabled = False
+    else:
+        raise ValueError(
+            "Invalid LANGFUSE_TRACING_ENABLED value. "
+            "Expected one of: '1', 'true', 'yes', 'on', '0', 'false', 'no', 'off'."
+        )
 
     return Settings(
         entry_id=int(entry) if entry else None,
@@ -71,5 +83,6 @@ def load_settings() -> Settings:
         ollama_model=ollama_model,
         langfuse_base_url=langfuse_base_url,
         langfuse_public_key=langfuse_public_key,
-        langfuse_secret_key=langfuse_secret_key
+        langfuse_secret_key=langfuse_secret_key,
+        langfuse_tracing_enabled=langfuse_tracing_enabled
     )

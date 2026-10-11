@@ -329,7 +329,7 @@ Attach this metadata to the root trace:
 - prompt name, version and content hash;
 - tool-schema version or hash;
 - evaluation case ID, when present;
-- live or evaluation mode;
+- manual or evaluation run;
 - anonymised session ID.
 
 Record tool arguments and returned fields, but remove API keys, filesystem paths, entry IDs and
@@ -348,6 +348,10 @@ Call `langfuse.flush()` before a short-lived CLI process exits so queued observa
 **Checkpoint:** one `fpl ask` command appears as one trace with both the model generation and tool
 span visible.
 
+**Completed: 11 October 2026.** All 175 tests passed. A live frozen-bank question produced one root
+trace, two generations and one tool observation. Both generations linked to `fpl-system` version 1
+and recorded token counts. The checked private values were absent from recorded inputs and outputs.
+
 ---
 
 ## Step 17 — create and run the 20-question evaluation
@@ -355,9 +359,13 @@ span visible.
 “Twenty questions” means 20 fixed test cases for the complete agent. It does not mean 20 trivia
 questions, and it does not require exact final wording.
 
-Start with five cases that exercise different tools and one refusal. Make the runner and scorers
+Start with five cases in total: four tool-based questions and one refusal. Make the runner and scorers
 reliable, then expand the same dataset to 20. Do not tune the prompt before saving the first full
 baseline.
+
+Choose one validated snapshot explicitly and use it for every baseline case. Read expected facts
+from its tool results, not from a model answer or the live FPL API. Keep the model and local prompt
+fixed. Model requests and trace exports can use the network; FPL data must come from the snapshot.
 
 Each case should contain:
 
@@ -375,9 +383,9 @@ One example:
 {
   "id": "team-bank-and-transfers",
   "input": "How much money do I have in the bank and how many free transfers do I have?",
-  "snapshot_id": "pre-gw6-2026-09-30",
+  "snapshot_id": "20261007_015905_current-check_0d1e87bc-dirty",
   "expected_tools": ["get_my_team"],
-  "expected_facts": {"bank_tenths": 10, "free_transfers": 1},
+  "expected_facts": {"bank_in_tenths": 10, "free_transfers": 1},
   "answer_kind": "observed"
 }
 ```
@@ -385,6 +393,7 @@ One example:
 This case does not require one exact sentence. It checks that the model chose `get_my_team`, did
 not call an unrelated tool, and included the two correct facts from the frozen snapshot. Your
 other 19 cases should test different decisions, ambiguities, projections and refusal behaviour.
+Use your selected snapshot ID and verify its facts before copying this example into the dataset.
 
 **Create:**
 
@@ -418,6 +427,8 @@ Use deterministic scorers first:
 
 Do not start with an LLM judge. Manual review plus deterministic checks make initial failures
 easier to understand.
+Review groundedness manually too: deterministic checks cannot prove that every free-text claim
+is supported by the tool results.
 
 Start with the JSONL dataset in Git. Once it is stable, upload the same cases to a versioned
 Langfuse Dataset. Langfuse datasets store inputs and expected outputs, and its experiment runner

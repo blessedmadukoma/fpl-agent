@@ -1,7 +1,14 @@
 from pathlib import Path
 
+from langfuse import Langfuse
 from openai import OpenAI
 
+from fpl.agent.observability import (
+    safe_observation,
+    safe_update,
+    sanitise_messages,
+    sanitise_trace_data,
+)
 from fpl.config import Settings
 
 
@@ -21,17 +28,42 @@ def message_client(message: str) -> list[dict]:
     return messages
 
 
-def model_request(settings: Settings, messages: list[dict], tools: list[dict] | None = None):
+def model_request(settings: Settings, lf_client: Langfuse | None, messages: list[dict],
+                  tools: list[dict] | None = None, private_values: tuple[str, ...] = ()):
     client = OpenAI(
         base_url=settings.ollama_base_url,
         api_key=settings.ollama_api_key
     )
 
-    response = client.chat.completions.create(
-        model=settings.ollama_model,
-        messages=messages,
-        tools=tools,
-        stream=False
-    )
+    with safe_observation(lf_client, as_type="generation", name="ollama.request",
+                          model=settings.ollama_model) as generation_span:
+        safe_update(generation_span, lambda: {
+            "input": {
+                "messages": sanitise_messages(messages, private_values),
+                "tools": sanitise_trace_data(tools, private_values),
+            },
+        })
+
+        response = client.chat.completions.create(
+            model=settings.ollama_model,
+            messages=messages,
+            tools=tools,
+            stream=False
+        )
+
+        safe_update(generation_span, lambda: {
+            "output": sanitise_trace_data(response.choices[0].message.model_dump(
+                include={"content", "tool_calls"},
+                mode="json",
+                exclude_none=True,
+            ), private_values),
+        })
+        if response.usage is not None:
+            safe_update(generation_span, lambda: {
+                "usage_details": {
+                    "input": response.usage.prompt_tokens,
+                    "output": response.usage.completion_tokens,
+                },
+            })
 
     return response.choices[0].message

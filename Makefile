@@ -17,7 +17,7 @@ FROM_GW ?= 5
 
 .PHONY: help setup test doctor update load-history odds refresh my-team fixtures \
 	projections recommend recommend-save chips settle backtest backtest-teams \
-	backtest-minutes check-scoring
+	backtest-minutes check-scoring trace-smoke
 
 help: ## Show available targets and common parameter overrides
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target> [NAME=value]\n\nTargets:\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -28,6 +28,9 @@ setup: ## Create or update the virtual environment from uv.lock
 
 test: ## Run the complete test suite
 	$(PYTHON) -m pytest -q
+
+trace-smoke: ## Check Langfuse authentication and send a harmless smoke trace
+	$(PYTHON) -c 'from fpl.agent.observability import smoke_test; smoke_test()'
 
 doctor: ## Check Python, dependencies, settings, and FPL API access
 	$(FPL) doctor
