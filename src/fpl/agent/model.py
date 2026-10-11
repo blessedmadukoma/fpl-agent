@@ -9,7 +9,7 @@ def load_prompt(prompt_path: Path):
     return prompt_path.read_text(encoding="utf-8").strip()
 
 
-def message_client(message: str):
+def message_client(message: str) -> list[dict]:
     prompt_path = Path(__file__).parent / "prompts" / "system-v1.md"
     system_prompt = load_prompt(prompt_path)
 
