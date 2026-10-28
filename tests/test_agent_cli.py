@@ -60,3 +60,35 @@ def test_ask_help_does_not_load_settings_or_call_model(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "question" in output
     assert "--snapshot" in output
+
+
+def test_ask_passes_numeric_horizon_to_agent(tmp_path, monkeypatch):
+    from unittest.mock import Mock
+
+    settings = Settings(entry_id=None, data_dir=tmp_path)
+    snapshot = tmp_path / "chosen-snapshot"
+    agent = Mock(return_value="Answer.")
+    monkeypatch.setattr(cli, "load_settings", lambda: settings)
+    monkeypatch.setattr(loop, "agent_loop", agent)
+
+    cli.main([
+        "ask", "My question?", "--snapshot", str(snapshot), "--horizon", "3",
+    ])
+
+    agent.assert_called_once_with(settings, "My question?", snapshot, horizon=3)
+
+
+@pytest.mark.parametrize("command", ["ask", "ask-current"])
+def test_invalid_horizon_is_rejected_before_settings_load(monkeypatch, command):
+    def unexpected_load():
+        raise AssertionError("Invalid horizon should stop before preparation")
+
+    monkeypatch.setattr(cli, "load_settings", unexpected_load)
+    arguments = [command, "My question?", "--horizon", "9"]
+    if command == "ask":
+        arguments.extend(["--snapshot", "chosen-snapshot"])
+
+    with pytest.raises(SystemExit) as result:
+        cli.main(arguments)
+
+    assert result.value.code == 2

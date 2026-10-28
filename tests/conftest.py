@@ -11,6 +11,10 @@ class FakeObservation:
         self.client = client
         self.parameters = parameters
         self.parent = client.active[-1] if client.active else None
+        self.trace_id = (
+            self.parent.trace_id if self.parent is not None
+            else f"{len(client.observations) + 1:032x}"
+        )
         self.attributes = dict(client.attributes)
         self.updates = []
         self.closed = False

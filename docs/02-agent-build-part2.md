@@ -1009,7 +1009,7 @@ not choose between them, so it does not count in the gate.
 
 **Known gap.** The backtest cannot test the model at GW6 of a season, because 2024/25 is not
 loaded. For 2025/26 GW5–19 it would have had no last-season priors. Live at GW6 it does have
-them. Part 3 Step 19 closes this gap.
+them. Part 3 Step 24 closes this gap.
 
 ### 10.2 Look at the projections
 
@@ -1244,7 +1244,7 @@ time in brackets.
 | Any day until 8 Oct                     | `fpl update` once a day (optional)                                                                                                                                                                                 | saves daily snapshots in `data/raw/`; keeps flags and prices current                                    |
 | **Fri 9 Oct, 17:30 (19:30)**            | `fpl update && fpl odds && fpl fixtures`                                                                                                                                                                           | the press conferences are done and the GW6 odds are out; check that GW6 cells now show `*`              |
 | Fri 9 Oct, 17:45 (19:45)                | `fpl recommend --model full --save`                                                                                                                                                                                | the transfer decision                                                                                   |
-| Fri 9 Oct, 18:00 (20:00)                | Check by hand, for every player in the XI and every transfer target: FFScout team news \[10\] or RotoWire \[11\]. Use `fpl my-team` for your squad's flags, and `fpl projections --top 60` (`p_start`) for targets | the model cannot read press-conference quotes yet (Part 3 Step 20)                                      |
+| Fri 9 Oct, 18:00 (20:00)                | Check by hand, for every player in the XI and every transfer target: FFScout team news \[10\] or RotoWire \[11\]. Use `fpl my-team` for your squad's flags, and `fpl projections --top 60` (`p_start`) for targets | the model cannot read press-conference quotes yet (Part 3 Step 25)                                      |
 | **Fri 9 Oct, before 22:30 (Sat 00:30)** | **Make the transfer on the FPL site, if the verdict is MAKE**                                                                                                                                                      | the last price change before the deadline is at 23:00 UTC                                               |
 | Sat 10 Oct, 08:00–09:30 (10:00–11:30)   | `fpl update && fpl projections --top 60`                                                                                                                                                                           | captain, vice and bench on the latest flags; change a transfer only if a player was ruled out overnight |
 | **Sat 10 Oct, 10:00 (12:00)**           | **Deadline**                                                                                                                                                                                                       |                                                                                                         |

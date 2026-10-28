@@ -8,11 +8,19 @@ from __future__ import annotations
 import argparse
 import logging
 import platform
+import re
+from datetime import datetime, timezone
 from importlib.metadata import version
 from pathlib import Path
 
 from fpl import report
+from fpl.agent.model import message_client
+from fpl.agent.observability import build_run_metadata
+from fpl.agent.service import tool_definitions
 from fpl.config import Settings, load_settings
+from fpl.evals.runner import load_cases, run_cases, save_results, score_results
+from fpl.evals.snapshot import validate_snapshot
+from fpl.evals.snapshot_files import calculate_file_sha256, read_manifest
 from fpl.fplapi import FplClient
 
 COMMANDS: dict[str, tuple] = {}
@@ -255,13 +263,126 @@ def cmd_create_snapshot(settings: Settings, args) -> None:
     "Answer an FPL question using a frozen snapshot",
     arg("question"),
     arg("--snapshot", type=Path, required=True),
+    arg("--horizon", type=int, choices=range(1, 7),
+        help="Application-selected planning horizon; overrides model arguments"),
 )
-def ask_model(settings: Settings, args):
+def cmd_ask_model(settings: Settings, args):
     from fpl.agent.loop import agent_loop
 
-    answer = agent_loop(settings, args.question, args.snapshot)
+    options = {} if args.horizon is None else {"horizon": args.horizon}
+    answer = agent_loop(settings, args.question, args.snapshot, **options)
     # report.print_model_answer(answer)
     print(answer)
+
+
+@command(
+    "ask-current",
+    "Refresh data, load missing history, freeze a snapshot and answer",
+    arg("question"),
+    arg("--name", default="ask-current", help="Human name for the new snapshot"),
+    arg("--horizon", type=int, choices=range(1, 7),
+        help="Application-selected planning horizon; overrides model arguments"),
+)
+def cmd_ask_current(settings: Settings, args) -> None:
+    from fpl.agent.current import prepare_current_snapshot
+    from fpl.agent.loop import agent_loop
+
+    if not args.question.strip():
+        raise SystemExit("Provide a non-empty question.")
+    entry_id(settings)
+    response = prepare_current_snapshot(settings, args.name)
+    report.print_snapshot(response)
+    options = {} if args.horizon is None else {"horizon": args.horizon}
+    answer = agent_loop(
+        settings, args.question, Path(response["final_path"]), **options,
+    )
+    print(answer)
+
+
+@command(
+    "eval",
+    "Run fixed FPL agent evaluation cases",
+    arg("--cases", type=Path, required=True),
+    arg("--snapshot", type=Path, required=True),
+    arg("--run-id", required=True),
+)
+def cmd_eval(settings: Settings, args):
+    cases = load_cases(args.cases)
+    snapshot = validate_snapshot(args.snapshot)
+
+    if not cases:
+        raise SystemExit("No evaluation cases found.")
+
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", args.run_id):
+        raise SystemExit(
+            "Invalid run name: use only letters, numbers, hyphens and underscores.")
+
+    case_ids = [case["id"] for case in cases]
+    duplicates = sorted({cid for cid in case_ids if case_ids.count(cid) > 1})
+    if duplicates:
+        raise SystemExit(f"Duplicate case IDs: {', '.join(duplicates)}")
+
+    snapshot_id = snapshot["snapshot_id"]
+    mismatched = [case["id"]
+                  for case in cases if case["snapshot_id"] != snapshot_id]
+    if mismatched:
+        raise SystemExit(
+            f"Cases with mismatched snapshot_id (expected {snapshot_id!r}): "
+            f"{', '.join(mismatched)}")
+
+    run_dir = settings.data_dir / "evals" / "runs"
+
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    raw_path = run_dir / f"{args.run_id}.jsonl"
+    scored_path = run_dir / f"{args.run_id}-scored.jsonl"
+    manifest_path = run_dir / f"{args.run_id}-manifest.jsonl"
+
+    for path in (raw_path, scored_path, manifest_path):
+        if path.exists():
+            raise SystemExit(f"Refusing to overwrite existing file: {path}")
+
+    local_prompt = message_client("")[0]["content"]
+
+    manifest = read_manifest(args.snapshot)
+
+    try:
+        run_manifest = build_run_metadata(
+            manifest=manifest,
+            system_prompt=local_prompt,
+            team_tools=tool_definitions(),
+            session_id=args.run_id,
+            run_id=args.run_id,
+            model=settings.ollama_model,
+            run_kind="evaluation",
+        )
+    except Exception as exc:
+        raise SystemExit(
+            f"Failed to build run metadata ({type(exc).__name__})."
+        ) from None
+
+    run_manifest.update({
+        "dataset_file": args.cases.name,
+        "dataset_hash": calculate_file_sha256(args.cases),
+        "case_count": len(cases),
+        "creation_time": datetime.now(timezone.utc).isoformat(),
+        "model_endpoint": settings.ollama_base_url,
+        "prompt_file": "system-v1.md",
+    })
+
+    save_results([run_manifest], manifest_path)
+
+    run_cases(settings, cases, raw_path,
+              snapshot_root=args.snapshot.parent, run_id=args.run_id)
+
+    records = load_cases(raw_path)
+    scored = score_results(cases, records)
+    save_results(scored, scored_path)
+
+    print(f"Saved {len(records)} records.")
+    print(f"Raw results:    {raw_path}")
+    print(f"Scored results: {scored_path}")
+    print(f"Manifest:       {manifest_path}")
 
 
 def main(argv: list[str] | None = None) -> None:

@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from openai.types.chat import ChatCompletionMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from fpl.agent import loop, model, observability, service
 from fpl.agent.schemas import HistoricalLeadersInput, MyTeamInput
@@ -153,6 +153,206 @@ def test_tool_result_is_returned_with_matching_call_id(runtime):
         request["tools"][0]["function"]["name"] == "get_my_team"
         for request in runtime.requests
     )
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_evaluation_trace_id_and_batch_metadata_survive_model_failure(
+    runtime, monkeypatch, fails,
+):
+    context = {"trace_id": None}
+    if fails:
+        def fail(*args, **kwargs):
+            raise RuntimeError("Synthetic model failure")
+
+        monkeypatch.setattr(loop, "model_request", fail)
+        with pytest.raises(RuntimeError, match="Synthetic model failure"):
+            loop.agent_loop(
+                runtime.settings, "Question", runtime.snapshot_dir,
+                run_id="test-run", case_id="bank", trace_context=context,
+            )
+    else:
+        runtime.responses.append(assistant_message("Answer"))
+        assert loop.agent_loop(
+            runtime.settings, "Question", runtime.snapshot_dir,
+            run_id="test-run", case_id="bank", trace_context=context,
+        ) == "Answer"
+
+    root = runtime.langfuse.observations[0]
+    assert context["trace_id"] == root.trace_id
+    assert isinstance(context["trace_id"], str)
+    metadata = next(
+        update["metadata"] for update in root.updates if "metadata" in update
+    )
+    assert metadata["run_id"] == "test-run"
+    assert metadata["case_id"] == "bank"
+    assert metadata["run_kind"] == "evaluation"
+    assert metadata["session_id"] == "test-run"
+    assert root.attributes["session_id"] == "test-run"
+    assert runtime.langfuse.flush_count == 1
+
+
+@pytest.mark.parametrize("trace_id", [None, 123])
+def test_invalid_trace_id_does_not_stop_the_answer(
+    runtime, monkeypatch, trace_id,
+):
+    create = runtime.langfuse.start_as_current_observation
+
+    def start(**parameters):
+        span = create(**parameters)
+        span.trace_id = trace_id
+        return span
+
+    monkeypatch.setattr(runtime.langfuse, "start_as_current_observation", start)
+    runtime.responses.append(assistant_message("Answer"))
+    context = {"trace_id": None}
+
+    assert loop.agent_loop(
+        runtime.settings, "Question", runtime.snapshot_dir,
+        trace_context=context,
+    ) == "Answer"
+    assert context == {"trace_id": None}
+
+
+def test_trace_id_read_failure_does_not_stop_the_answer(runtime, monkeypatch):
+    create = runtime.langfuse.start_as_current_observation
+
+    def unreadable(span):
+        raise RuntimeError("test-lf-secret /private/test-path")
+
+    def start(**parameters):
+        span = create(**parameters)
+        monkeypatch.setattr(
+            type(span), "trace_id", property(unreadable), raising=False,
+        )
+        return span
+
+    monkeypatch.setattr(runtime.langfuse, "start_as_current_observation", start)
+    runtime.responses.append(assistant_message("Answer"))
+    context = {"trace_id": None}
+
+    assert loop.agent_loop(
+        runtime.settings, "Question", runtime.snapshot_dir,
+        trace_context=context,
+    ) == "Answer"
+    assert context == {"trace_id": None}
+
+
+@pytest.mark.parametrize("failure", ["disabled", "root-setup"])
+def test_unavailable_tracing_leaves_null_trace_id(runtime, monkeypatch, failure):
+    settings = runtime.settings
+    if failure == "disabled":
+        settings = replace(settings, langfuse_tracing_enabled=False)
+    else:
+        runtime.langfuse.failures.add("observation.create")
+        runtime.langfuse.fail_as_type = "span"
+    api = mock_ollama(monkeypatch, [assistant_message("Answer")])
+    context = {"trace_id": None}
+
+    assert loop.agent_loop(
+        settings, "Question", runtime.snapshot_dir,
+        run_id="test-run", case_id="bank", trace_context=context,
+    ) == "Answer"
+    assert context == {"trace_id": None}
+    assert api.chat.completions.create.call_count == 1
+
+
+def test_tool_record_preserves_raw_arguments_and_json_result(runtime):
+    records = []
+    runtime.responses.extend([
+        assistant_message(calls=[tool_call("recorded-bank", arguments="{ }")]),
+        assistant_message("You have £1.0m."),
+    ])
+
+    answer = loop.agent_loop(
+        runtime.settings, "How much is in my FPL bank?", runtime.snapshot_dir,
+        tool_calls=records,
+    )
+
+    assert answer == "You have £1.0m."
+    assert records == [{
+        "tool_call_id": "recorded-bank",
+        "name": "get_my_team",
+        "raw_arguments": "{ }",
+        "arguments": {},
+        "status": "completed",
+        "result": {"bank_in_tenths": 10},
+    }]
+    assert json.loads(json.dumps(records)) == records
+    assert len(runtime.requests) == 2
+    assert len(runtime.executions) == 1
+
+
+@pytest.mark.parametrize("name,raw_arguments,parsed_arguments,error_type", [
+    ("unknown_tool", "{}", None, ValueError),
+    ("get_my_team", "{", None, json.JSONDecodeError),
+    ("get_my_team", '{"unexpected": 1}', {"unexpected": 1}, ValidationError),
+    ("get_my_team", "[]", [], ValidationError),
+])
+def test_invalid_tool_request_is_recorded_before_error_is_raised(
+    runtime, name, raw_arguments, parsed_arguments, error_type,
+):
+    records = []
+    runtime.responses.append(assistant_message(calls=[
+        tool_call("failed-request", name=name, arguments=raw_arguments),
+    ]))
+
+    with pytest.raises(error_type):
+        loop.agent_loop(
+            runtime.settings, "Read my FPL bank.", runtime.snapshot_dir,
+            tool_calls=records,
+        )
+
+    assert records == [{
+        "tool_call_id": "failed-request",
+        "name": name,
+        "raw_arguments": raw_arguments,
+        "arguments": parsed_arguments,
+        "status": "error",
+        "error_type": error_type.__name__,
+    }]
+    assert json.loads(json.dumps(records)) == records
+    assert runtime.executions == []
+    assert len(runtime.requests) == 1
+
+
+def test_tool_execution_error_is_recorded_without_raw_exception_text(runtime, monkeypatch):
+    records = []
+    error = RuntimeError("private-test-message /private/test-path")
+    runtime.responses.append(assistant_message(calls=[tool_call("failed-tool")]))
+
+    def failing_tool(directory, name, arguments):
+        raise error
+
+    monkeypatch.setattr(loop, "run_tool", failing_tool)
+
+    with pytest.raises(RuntimeError) as caught:
+        loop.agent_loop(
+            runtime.settings, "Read my FPL bank.", runtime.snapshot_dir,
+            tool_calls=records,
+        )
+
+    assert caught.value is error
+    assert records == [{
+        "tool_call_id": "failed-tool",
+        "name": "get_my_team",
+        "raw_arguments": "{}",
+        "arguments": {},
+        "status": "error",
+        "error_type": "RuntimeError",
+    }]
+    assert "private-test-message" not in json.dumps(records)
+    assert len(runtime.requests) == 1
+
+
+def test_answer_without_tools_leaves_the_collector_empty(runtime):
+    records = []
+    runtime.responses.append(assistant_message("Please clarify the player name."))
+
+    assert loop.agent_loop(
+        runtime.settings, "Which player?", runtime.snapshot_dir, tool_calls=records,
+    ) == "Please clarify the player name."
+    assert records == []
+    assert runtime.executions == []
 
 
 def test_all_registered_tools_are_offered_and_another_tool_can_run(runtime, monkeypatch):
@@ -500,3 +700,64 @@ def test_original_business_error_survives_cleanup_and_flush_failures(runtime, mo
     assert "private application details" not in caplog.text
     assert "test-lf-secret" not in caplog.text
     assert runtime.langfuse.flush_count == 1
+
+
+@pytest.mark.parametrize("tool_name,base_arguments", [
+    ("get_recommendation", {}),
+    ("get_chip_values", {}),
+    ("compare_players", {"element_ids": [1, 2]}),
+    ("get_fixture_outlook", {"team_id": 1}),
+])
+@pytest.mark.parametrize("requested_horizon", [None, 9])
+def test_application_horizon_controls_tool_arguments_and_definition(
+    runtime, monkeypatch, tool_name, base_arguments, requested_horizon,
+):
+    arguments = dict(base_arguments)
+    if requested_horizon is not None:
+        arguments["horizon"] = requested_horizon
+    raw_arguments = json.dumps(arguments)
+    monkeypatch.setattr(loop, "tool_definitions", service.tool_definitions)
+
+    def run_tool(directory, name, effective_arguments):
+        assert directory == runtime.snapshot_dir
+        assert name == tool_name
+        request = service.TOOL_REGISTRY[name][0].model_validate(effective_arguments)
+        assert request.horizon == 3
+        runtime.executions.append(effective_arguments)
+        return BankToolResult(bank_in_tenths=10)
+
+    monkeypatch.setattr(loop, "run_tool", run_tool)
+    runtime.responses.extend([
+        assistant_message(calls=[tool_call(
+            name=tool_name, arguments=raw_arguments,
+        )]),
+        assistant_message("Answer from the selected tool."),
+    ])
+    records = []
+
+    assert loop.agent_loop(
+        runtime.settings, "My question", runtime.snapshot_dir,
+        horizon=3, tool_calls=records,
+    ) == "Answer from the selected tool."
+
+    assert runtime.executions == [{**base_arguments, "horizon": 3}]
+    assert records[0]["arguments"] == {**base_arguments, "horizon": 3}
+    assert records[0]["raw_arguments"] == raw_arguments
+    definition = next(
+        item["function"] for item in runtime.requests[0]["tools"]
+        if item["function"]["name"] == tool_name
+    )
+    assert definition["parameters"]["properties"]["horizon"]["enum"] == [3]
+    assert definition["parameters"]["properties"]["horizon"]["default"] == 3
+
+
+@pytest.mark.parametrize("horizon", [0, 7, True, "3", 3.5])
+def test_invalid_application_horizon_stops_before_model_call(runtime, horizon):
+    with pytest.raises(ValidationError):
+        loop.agent_loop(
+            runtime.settings, "My question", runtime.snapshot_dir,
+            horizon=horizon,
+        )
+
+    assert runtime.requests == []
+    assert runtime.langfuse.observations == []

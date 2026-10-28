@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 import lzma
 import subprocess
 from dataclasses import dataclass
@@ -20,12 +21,70 @@ import pandas as pd
 from fpl.config import Settings
 from fpl.ingest.current import LIVE_STATS, events_frame, state_frame, teams_frame
 from fpl.ingest.download import download
-from fpl.storage import replace_rows
+from fpl.storage import query, replace_rows, table_exists
+
+logger = logging.getLogger(__name__)
 
 VAASTAV_URL = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data/{season}/{file}"
 FPLCACHE_REPO = "https://github.com/Randdalf/fplcache.git"
 VAASTAV_POSITIONS = {"GK": "GKP", "GKP": "GKP",
                      "DEF": "DEF", "MID": "MID", "FWD": "FWD"}
+
+
+def _has_season(con, table: str, season: str) -> bool:
+    return table_exists(con, table) and bool(con.execute(
+        f"select 1 from {table} where season = ? limit 1", [season]
+    ).fetchone())
+
+
+def _missing_gws(con, table: str, season: str, expected: list[int]) -> list[int]:
+    available = set()
+    if table_exists(con, table):
+        available = set(query(
+            con, f"select distinct gw from {table} where season = ?", [season]
+        ).gw)
+    return sorted(set(expected) - available)
+
+
+def ensure_history(settings: Settings, con, finished_gws: list[int]) -> None:
+    """Load missing historical inputs before freezing, never during a tool call."""
+    previous = settings.history_season
+    metadata_missing = any(
+        not _has_season(con, table, previous)
+        for table in ("events", "teams", "rules")
+    )
+    previous_gws = [] if metadata_missing else query(
+        con, "select gw from events where season = ?", [previous]
+    ).gw.to_list()
+    if metadata_missing or _missing_gws(con, "state", previous, previous_gws):
+        logger.info("Loading historical snapshots for %s.", previous)
+        load_states_from_fplcache(settings, con, previous)
+        previous_gws = query(
+            con, "select gw from events where season = ?", [previous]
+        ).gw.to_list()
+
+    if (
+        not _has_season(con, "fixtures", previous)
+        or _missing_gws(con, "player_gw", previous, previous_gws)
+    ):
+        logger.info("Loading historical results for %s.", previous)
+        load_vaastav_season(settings, con, previous)
+
+    missing = _missing_gws(con, "state", settings.current_season, finished_gws)
+    if missing:
+        logger.info("Loading missing current-season snapshots: %s.", missing)
+        load_states_from_fplcache(
+            settings, con, settings.current_season, with_metadata=False,
+        )
+        remaining = _missing_gws(
+            con, "state", settings.current_season, finished_gws,
+        )
+        if remaining:
+            logger.warning(
+                "Archive did not supply snapshots for %s GWs %s; "
+                "these weeks cannot be used as minutes-model training examples.",
+                settings.current_season, remaining,
+            )
 
 
 @dataclass(frozen=True)

@@ -145,6 +145,23 @@ def test_unknown_git_state_is_not_reported_as_clean(monkeypatch):
     assert metadata["code_dirty"] == "unknown"
     assert metadata["db_hash"] == "unknown"
     assert "case_id" not in metadata
+    assert "run_id" not in metadata
+
+
+def test_evaluation_metadata_includes_run_and_case_ids(monkeypatch):
+    monkeypatch.setattr(observability, "git_metadata", lambda: {
+        "commit": "test-commit", "dirty": False,
+    })
+    metadata = observability.build_run_metadata(
+        {}, "Prompt", [], "test-run", "fixture-model",
+        run_kind="evaluation", run_id="test-run", case_id="bank",
+    )
+
+    assert metadata["run_kind"] == "evaluation"
+    assert metadata["run_id"] == "test-run"
+    assert metadata["case_id"] == "bank"
+    assert metadata["session_id"] == "test-run"
+    assert all(isinstance(value, str) for value in metadata.values())
 
 
 def test_matching_prompt_returns_the_reference_object(fake_langfuse):

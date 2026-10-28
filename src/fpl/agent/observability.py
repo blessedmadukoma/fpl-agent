@@ -43,7 +43,8 @@ def smoke_test():
         try:
             span.update(input="hello", output="connection works")
         except Exception:
-            raise RuntimeError("Langfuse smoke trace could not be recorded.") from None
+            raise RuntimeError(
+                "Langfuse smoke trace could not be recorded.") from None
     try:
         langfuse.flush()
     except Exception:
@@ -186,6 +187,7 @@ def sanitise_messages(messages: list, private_values=None):
 
 def build_run_metadata(manifest, system_prompt, team_tools, session_id,
                        model, run_kind="manual", case_id=None,
+                       run_id: str | None = None,
                        prompt_name=None, prompt_version=None,
                        prompt_hash=None):
     """Build reproducibility metadata for a single question/run."""
@@ -234,6 +236,8 @@ def build_run_metadata(manifest, system_prompt, team_tools, session_id,
         "run_kind": str(run_kind),
     }
 
+    if run_id is not None:
+        metadata["run_id"] = str(run_id)
     if case_id is not None:
         metadata["case_id"] = str(case_id)
 

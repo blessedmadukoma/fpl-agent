@@ -7,6 +7,7 @@ text ("Expected back 10 Oct") and position. See 01-reference.md H.3.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 
@@ -19,6 +20,8 @@ from sklearn.preprocessing import OneHotEncoder
 
 from fpl.context import GwContext, load_context
 from fpl.storage import query
+
+logger = logging.getLogger(__name__)
 
 NUMERIC = ["started_last", "starts_last4",
            "minutes_last4", "season_start_rate", "games"]
@@ -140,10 +143,39 @@ def train(con, season_gws: list[tuple[str, int]]) -> MinutesModel:
 
 
 def training_gws(con, season: str, before_gw: int, previous_season: str | None) -> list[tuple[str, int]]:
-    """Every GW before `before_gw` this season (from GW2), plus all of the previous season."""
+    """Available training GWs, excluding this season's target GW and later.
+
+    Require a deadline and saved state with matching player results. A live
+    update can recover past results, but not a missing historical state.
+    """
     gws = [(season, g) for g in range(2, before_gw)]
     if previous_season:
         done = query(con, "select distinct gw from state where season = ? and gw >= 2", [
                      previous_season]).gw
         gws = [(previous_season, int(g)) for g in sorted(done)] + gws
-    return gws
+
+    available = query(con, """
+        select distinct s.season, s.gw
+        from state s
+        join events e on e.season = s.season and e.gw = s.gw
+        join player_gw p on p.season = s.season and p.gw = s.gw
+                       and p.element = s.element
+        where s.season in (?, ?) and s.gw >= 2
+          and e.deadline is not null
+    """, [season, previous_season])
+    available_gws = set(available.itertuples(index=False, name=None))
+    selected = [pair for pair in gws if pair in available_gws]
+    skipped = [pair for pair in gws if pair not in available_gws]
+    if skipped:
+        logger.warning(
+            "Skipping minutes-model training weeks with missing saved state, "
+            "deadline or matching player results: %s",
+            ", ".join(f"{s} GW{g}" for s, g in skipped),
+        )
+    if not selected:
+        raise LookupError(
+            "No usable minutes-model training gameweeks. "
+            "Load historical saved state, deadlines and matching player results; "
+            "a current update cannot recreate missing historical state."
+        )
+    return selected
