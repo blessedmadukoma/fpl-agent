@@ -4,8 +4,10 @@ Version 7, 30 October 2026. This guide starts at Step 13, immediately after Part
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
-**Current route:** finish Step 17 by committing the pending work and reviewing the saved
-20-answer run. Keep the personal weekly FPL workflow active for the December league goal.
+**Current route:** the archived Step 17 review and failure classification are complete,
+and the new GW9 baseline has saved results and verified traces. Keep the personal weekly
+FPL workflow active for the December league goal. The new answers still need a separate
+quality review before reporting their full-task or groundedness scores.
 Use [Part 3: understand and own the implementation](03-agent-build-part3-learning.md) for
 the review work and `budget-system` for new agent implementation practice. The public pilot
 is postponed. Learning checks remain separate from software status.
@@ -460,6 +462,32 @@ matches, 10/20 argument passes, 11/20 full-task passes, 15/20 fact-recall passes
 one is a valid alternative tool route rejected by the strict matcher. The saved
 no-answer error counts as a groundedness failure. These are answer-quality measures,
 not evidence that the transfer policy improves FPL scores.
+
+### GW9 baseline execution — 30 October
+
+`pre-gw9-01` ran from clean commit `89e4d96` using local `gemma4:12b`, prompt
+`system-v2.md` and the fixed 28 October snapshot. It saved all 20 case records:
+18 completed answers and two execution errors. Automatic checks passed for
+19/20 expected-tool selections and 13/20 argument sets \[17\].
+
+All 20 Langfuse traces were verified through the remote API. Their recorded
+outputs, case IDs, snapshot, prompt hash and clean source commit match the local run.
+
+The two recorded execution failures are:
+
+- `fixture-outlook`: requested horizon 10 instead of 5. The tool accepts at
+  most 6, so argument validation rejected the call.
+- `recommendation-high-threshold-hold`: the recommendation tool completed,
+  then the model returned empty content and no tool calls. The loop raised
+  `RuntimeError`. The reason for the empty model reply is not established.
+
+Named Langfuse prompt version 2 was not published, so the remote named-prompt
+link is absent. The local v2 prompt filename and matching prompt hash are recorded.
+This did not prevent trace delivery.
+
+These are execution and automatic-check results. The new run has not received
+a complete manual quality review. It uses different data, tools and prompt from
+the archived run, so the two runs do not form a controlled improvement experiment.
 
 “Twenty questions” means 20 fixed test cases for the complete agent. It does not mean 20 trivia
 questions, and it does not require exact final wording.
@@ -1051,3 +1079,5 @@ Treat each item as a separate measured change. Do not combine it with a prompt e
 16. Premier League, “What’s happening with FPL chips in 2026/27.” Accessed: 30 Oct. 2026.
     [Online]. Available:
     https://www.premierleague.com/en/news/4679879/whats-happening-with-fpl-chips-in-202627
+17. FPL Agent, [GW9 execution and trace verification](../data/evals/runs/pre-gw9-01-verification.json),
+    30 October 2026. Run `pre-gw9-01`.

@@ -26,9 +26,9 @@ saved FPL responses. See [dataset instructions](../evals/README.md).
 
 The AI-assisted Step 17 review and failure classification are complete for
 `post-gw6-01`. Keep its original run files and archived post-GW6 dataset.
-Commit the current code, prompt and review record before running the new
-GW9 dataset. That run is a separate experiment with a new run name; it does
-not measure improvement against a different snapshot and case set.
+The code, prompt and review record were committed as `89e4d96` before running
+the new GW9 dataset as `pre-gw9-01`. That run is a separate experiment; it
+does not measure improvement against a different snapshot and case set.
 
 ## What already exists
 
@@ -48,6 +48,10 @@ Repository check on 30 October 2026:
   assisted review does not establish independent understanding of every case.
 - The active 20-case dataset now uses a validated post-GW8 snapshot; the old
   dataset is preserved in `evals/archive/fpl-agent-v2-post-gw6.jsonl`.
+- `pre-gw9-01` saved 20 results: 18 completed answers and two execution errors.
+  All 20 traces were verified in Langfuse. Automatic expected-tool checks
+  passed for 19/20 cases and argument checks for 13/20. Its full manual
+  quality review remains separate from the completed archived-run review.
 - Steps 18 onward remain in the delivery roadmap.
 
 These are software status statements. Your understanding of each part remains
