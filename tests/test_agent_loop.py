@@ -493,7 +493,7 @@ def test_tool_failure_does_not_produce_a_fabricated_answer(runtime, monkeypatch)
 
 
 def test_system_prompt_is_loaded_as_text_independent_of_working_directory(tmp_path, monkeypatch):
-    prompt_path = Path(model.__file__).parent / "prompts" / "system-v1.md"
+    prompt_path = model.SYSTEM_PROMPT_PATH
     prompt_text = prompt_path.read_text(encoding="utf-8").strip()
     monkeypatch.chdir(tmp_path)
 
@@ -544,7 +544,7 @@ def test_complete_trace_links_matching_prompt_and_filters_only_recorded_data(run
     assert metadata["snapshot_id"] == runtime.manifest["snapshot_id"]
     assert metadata["db_hash"] == "fixture-database-hash"
     assert metadata["prompt_name"] == "fpl-system"
-    assert metadata["prompt_version"] == "1"
+    assert metadata["prompt_version"] == "2"
     assert str(uuid.UUID(root.attributes["session_id"])) == metadata["session_id"]
     for generation in (observations[1], observations[3]):
         assert generation.attributes["prompt"] is runtime.langfuse.prompt

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from dataclasses import asdict
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -46,6 +47,11 @@ def save_run(con, result, model: str) -> str:
         columns={result.ctx.gw: "ep"}).rename_axis("element").reset_index()
     replace_rows(con, "run_projections", projections.assign(
         run_id=run_id, gw=result.ctx.gw), run_id=run_id)
+    if result.chip_decision is not None:
+        replace_rows(con, "run_chip_advice", pd.DataFrame([{
+            "run_id": run_id,
+            "decision": json.dumps(asdict(result.chip_decision)),
+        }]), run_id=run_id)
     return run_id
 
 

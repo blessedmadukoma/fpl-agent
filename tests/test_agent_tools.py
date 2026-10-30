@@ -2,6 +2,7 @@
 
 import json
 import socket
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -489,3 +490,24 @@ def test_recommendation_selects_plan_using_threshold(frozen_team, threshold, mak
     payload = json.loads(result.model_dump_json())
     assert payload["make_transfers"] is make_transfers
     assert "ctx" not in payload
+
+
+@pytest.mark.parametrize(("threshold", "captain_gain"), [(2.5, 8), (1000.0, 2)])
+def test_chip_assessment_uses_the_threshold_selected_squad(frozen_team, threshold, captain_gain):
+    prepare_legal_squad(frozen_team)
+    frozen_team.context["team"] = replace(
+        frozen_team.context["team"], chips_available=("3xc (until GW7)",),
+    )
+    with connect_path(frozen_team.database_path, read_only=True) as con:
+        result = get_recommendation(
+            frozen_team.context, con,
+            RecommendationInput(model="ep_next", horizon=2, threshold=threshold),
+        )
+    decision = result.chip_decision
+    assert decision.action == "use"
+    assert decision.chip == "3xc"
+    assert decision.evaluated_gws == [6, 7]
+    option = next(option for option in decision.options if option.chip == "3xc")
+    assert option.gain_now == captain_gain
+    payload = json.loads(result.model_dump_json())
+    assert payload["chip_decision"]["chip"] == "3xc"

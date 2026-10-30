@@ -5,6 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from fpl.agent.observability import PROMPT_VERSION
+
 
 class FakeObservation:
     def __init__(self, client, parameters):
@@ -52,7 +54,7 @@ class FakeLangfuse:
         self.auth_count = 0
         self.authenticated = True
         self.prompt = SimpleNamespace(
-            name="fpl-system", version=1, prompt="Local system prompt",
+            name="fpl-system", version=PROMPT_VERSION, prompt="Local system prompt",
             is_fallback=False,
         )
 

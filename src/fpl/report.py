@@ -107,12 +107,32 @@ def print_recommendation(result) -> None:
         print(f"  {who.at[p, 'position']}  {label(p):<28} {ep[p]:5.2f}{tag}")
     print("Bench, in order: " +
           ", ".join(f"{label(p)} {ep[p]:.2f}" for p in chosen.bench))
+    if result.chip_decision is not None:
+        print_chip_decision(result.chip_decision)
     later = [g for g in result.plan.gws[1:] if g.buy]
     if later:
         print()
         print("Planned later (not an action now): " + "; ".join(
             f"GW{g.gw}: " + ", ".join(f"{who.at[o, 'web_name']} -> {who.at[i, 'web_name']}"
                                       for o, i in zip(g.sell, g.buy)) for g in later))
+
+
+def print_chip_decision(decision) -> None:
+    labels = {"use": "USE", "save": "SAVE", "review_required": "REVIEW REQUIRED",
+              "none_available": "NONE AVAILABLE"}
+    print(f"\nChip decision: {labels[decision.action]}")
+    print(decision.reason)
+    for option in decision.options:
+        if not option.available:
+            continue
+        if option.gain_now is None:
+            print(f"  {option.name} (expires GW{option.expires_gw}): {option.reason}")
+            continue
+        timing = (f"planned GW{option.planned_gw}, +{option.planned_gain:.2f} EP"
+                  if option.planned_gw is not None else "not allocated")
+        print(f"  {option.name}: now +{option.gain_now:.2f} EP; {timing}; expires GW{option.expires_gw}")
+    print("Chip gains are separate from the starting-XI EP above.")
+    print("Timing assumes this squad is held; reassess after transfers or team news.")
 
 
 def print_runs(settled: int, history: pd.DataFrame) -> None:

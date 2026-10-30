@@ -14,7 +14,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from fpl import report
-from fpl.agent.model import message_client
+from fpl.agent.model import SYSTEM_PROMPT_PATH, message_client
 from fpl.agent.observability import build_run_metadata
 from fpl.agent.service import tool_definitions
 from fpl.config import Settings, load_settings
@@ -367,7 +367,7 @@ def cmd_eval(settings: Settings, args):
         "case_count": len(cases),
         "creation_time": datetime.now(timezone.utc).isoformat(),
         "model_endpoint": settings.ollama_base_url,
-        "prompt_file": "system-v1.md",
+        "prompt_file": SYSTEM_PROMPT_PATH.name,
     })
 
     save_results([run_manifest], manifest_path)

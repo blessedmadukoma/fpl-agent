@@ -153,7 +153,7 @@ def test_eval_runs_once_and_saves_manifest_results_and_scores(
         evaluation.dataset,
     )
     assert details["case_count"] == 2
-    assert details["prompt_file"] == "system-v1.md"
+    assert details["prompt_file"] == "system-v2.md"
     assert details["creation_time"].endswith("+00:00")
     assert "Saved 2 records." in capsys.readouterr().out
     for path in evaluation.root.glob("*.jsonl"):

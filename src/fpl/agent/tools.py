@@ -27,6 +27,7 @@ from fpl.agent.schemas import (
     SquadPlayerSchema,
 )
 from fpl.context import load_context
+from fpl.optimise.chip_decision import chip_projection_gws
 from fpl.optimise.chips import chip_values
 from fpl.optimise.solver import SolverSettings
 from fpl.projections import registry
@@ -352,7 +353,7 @@ def get_historical_leaders(
 
 
 def get_recommendation(snapshot_context, con: duckdb.DuckDBPyConnection, request: RecommendationInput) -> RecommendationResult:
-    """Recommend transfers, a starting XI, captain and bench from a frozen snapshot.
+    """Recommend transfers, a starting XI, captain, bench and chip timing from a frozen snapshot.
 
     Compare the best transfer plan with a plan that makes no transfers in the
     first GW. Recommend transfers only when their gain meets the threshold.
@@ -374,12 +375,14 @@ def get_recommendation(snapshot_context, con: duckdb.DuckDBPyConnection, request
     gws = _horizon_gws(ctx, request.horizon)
 
     # Build the expected-points table.
-    projected = _project_horizon(con, ctx, request.model, gws)
+    chip_gws = chip_projection_gws(team, ctx.gw)
+    projected = _project_horizon(con, ctx, request.model, sorted(set(gws + chip_gws)))
 
     # Call the existing optimisation library.
     settings = SolverSettings(max_hits_per_gw=request.max_hits)
     recommendation = recommend_from_projections(
-        ctx, team, projected, settings, request.threshold)
+        ctx, team, projected[gws], settings, request.threshold,
+        chip_ep=projected[chip_gws] if chip_gws else None)
 
     # Construct a typed result.
     selected_gw_plans = [
@@ -422,6 +425,7 @@ def get_recommendation(snapshot_context, con: duckdb.DuckDBPyConnection, request
         make_transfers=recommendation.make_transfers,
         selected_gw_plans=selected_gw_plans,
         players=player_details,
+        chip_decision=recommendation.chip_decision,
         assumptions=[
             "Uses frozen prices, squad and projections; no transfer is executed.",
             "The hold plan forbids transfers in the first GW only.",

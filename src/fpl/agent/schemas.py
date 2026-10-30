@@ -3,6 +3,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from fpl.optimise.chip_decision import ChipDecision
+
 
 class SquadPlayerSchema(BaseModel):
     element_id: int
@@ -218,4 +220,5 @@ class RecommendationResult(SnapshotMetadata):
     make_transfers: bool
     players: list[PlayerDetails]
     selected_gw_plans: list[SelectedGwPlan]
+    chip_decision: ChipDecision | None = None
     assumptions: list[str]

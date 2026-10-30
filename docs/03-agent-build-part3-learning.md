@@ -1,6 +1,6 @@
 # FPL Agent — Part 3: understand and own the implementation
 
-Version 2, 28 October 2026.
+Version 3, 30 October 2026.
 
 **Goal:** I can follow one question through the agent, explain the important
 boundaries, review its evidence and make one change that I understand.
@@ -24,21 +24,28 @@ answers to AI. The updated `evals/fpl-agent-v2.jsonl` uses a fresh post-GW8
 snapshot for GW9. References were checked against frozen tool results and
 saved FPL responses. See [dataset instructions](../evals/README.md).
 
-The next Step 17 action is to commit the pending implementation and updated
-evaluation material together, then review three saved answers from
-`post-gw6-01`: one automatic pass, one automatic failure and one refusal.
-Finish the other 17 reviews before reporting its full manual scores. Use the
-archived post-GW6 dataset for that run. The new GW9 dataset is a separate
-experiment, with a new run name.
+The AI-assisted Step 17 review and failure classification are complete for
+`post-gw6-01`. Keep its original run files and archived post-GW6 dataset.
+Commit the current code, prompt and review record before running the new
+GW9 dataset. That run is a separate experiment with a new run name; it does
+not measure improvement against a different snapshot and case set.
 
 ## What already exists
 
-Repository check on 28 October 2026:
+Repository check on 30 October 2026:
 
 - Steps 13–16 have implementations: snapshots, tools, the agent loop and tracing.
 - The Step 17 runner has saved `post-gw6-01`: 20 results, automatic scores and
   a run manifest. That proves the batch ran, not that every answer was correct.
-- The full-run manual reviews and summary are not present under that run name.
+- The 20-answer review and classified summary are saved as
+  `post-gw6-01-reviews-v2.jsonl`, `post-gw6-01-reviewed-v2.jsonl` and
+  `post-gw6-01-summary-v2.jsonl`. They retain the original scores and recorded answers.
+- The AI-assisted review found 11/20 full-task passes, 15/20 fact-recall passes
+  and 17/20 groundedness passes. Ten cases had a failing check; their primary
+  categories include one strict-matcher evaluation defect. The no-answer error
+  counts as a groundedness failure, not an unsupported-claim incident.
+- The reusable result line is in `manual-eval-record.md`. Completion of the
+  assisted review does not establish independent understanding of every case.
 - The active 20-case dataset now uses a validated post-GW8 snapshot; the old
   dataset is preserved in `evals/archive/fpl-agent-v2-post-gw6.jsonl`.
 - Steps 18 onward remain in the delivery roadmap.

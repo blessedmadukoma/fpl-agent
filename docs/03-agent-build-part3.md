@@ -1,6 +1,6 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 6, 28 October 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 7, 30 October 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
@@ -13,6 +13,10 @@ is postponed. Learning checks remain separate from software status.
 **Changed in version 6:** refresh the active 20-case dataset from a post-GW8 snapshot,
 preserve the old dataset for its saved run, and add the league goal. Question and reference
 preparation is explicitly delegated to AI. The commit is part of Step 17.
+
+**Changed in version 7:** include explicit chip timing in recommendations. Prompt version 2
+requires the agent to report that decision and its limits. This implementation was delegated
+to AI; it does not complete any learner understanding check.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -256,6 +260,7 @@ src/fpl/agent/
   service.py
   prompts/
     system-v1.md
+    system-v2.md
 ```
 
 Start with these tools:
@@ -289,6 +294,33 @@ Test every tool without an LLM. Assert exact structured results against the froz
 tests locate tool defects before prompt behaviour obscures them.
 
 **Checkpoint:** a short Python call can invoke every tool and serialise its output to JSON.
+
+### Chip decisions in recommendations — 30 October
+
+The CLI recommendation and `get_recommendation` now include a chip decision:
+`use`, `save`, `review_required` or `none_available`. The assessment uses the selected
+first-GW squad after any recommended transfers, including the HOLD choice when its
+threshold is not met. It looks through the available chips' expiry, independently of
+the transfer horizon.
+
+The timing calculation allocates available Triple Captain, Bench Boost and Free Hit
+opportunities with at most one chip per GW. It respects expiry and the rule against
+consecutive Free Hits. The first chip set expires at GW19 \[16\].
+
+This is a fixed-squad estimate, not joint chip-and-transfer optimisation. Availability
+and minutes estimates are held constant; future transfers or injury recovery can change
+the timing. Wildcard is explicitly unvalued. A Free Hit opportunity needs transfer-plan
+review, including the restored squad; it is not an instruction to execute the ordinary
+transfer plan and activate Free Hit together.
+
+Chip gains are additional EP. The existing starting-XI EP and transfer gain exclude
+them. `recommend --save` records the advice in `run_chip_advice`; it does not confirm
+activation. Existing settlement still scores the ordinary model and hold plans without
+chips. Actual chip use belongs in the decision record.
+
+The current local system prompt is `system-v2.md`; version 1 is retained. New evaluation
+manifests record the selected prompt filename. The saved Step 17 run, its archived
+dataset and both evaluation snapshots remain unchanged.
 
 ---
 
@@ -412,7 +444,7 @@ and recorded token counts. The checked private values were absent from recorded 
 
 ## Step 17 — create and run the 20-question evaluation
 
-**Current work, 28 October:** `evals/fpl-agent-v2.jsonl` now contains 20 cases for the
+**Current work, 30 October:** `evals/fpl-agent-v2.jsonl` contains 20 cases for the
 validated post-GW8 snapshot targeting GW9. Its manifest and executed tool references live
 beside it. See [dataset instructions](../evals/README.md). Commit the runner, tests, current
 data preparation and evaluation material together as the Step 17 checkpoint.
@@ -420,6 +452,14 @@ data preparation and evaluation material together as the Step 17 checkpoint.
 Review `post-gw6-01` against `evals/archive/fpl-agent-v2-post-gw6.jsonl`, starting with three
 answers, then the other 17. Keep its run files and snapshot unchanged. The new dataset uses
 the run name `pre-gw9-01`; changing data does not establish an improvement over the old run.
+
+The AI-assisted review is now saved in `manual-eval-record.md` and the versioned
+`post-gw6-01-*-v2.jsonl` review artifacts. Its five scores are 15/20 expected-tool
+matches, 10/20 argument passes, 11/20 full-task passes, 15/20 fact-recall passes and
+17/20 groundedness passes. All ten cases with failing checks have primary categories;
+one is a valid alternative tool route rejected by the strict matcher. The saved
+no-answer error counts as a groundedness failure. These are answer-quality measures,
+not evidence that the transfer policy improves FPL scores.
 
 “Twenty questions” means 20 fixed test cases for the complete agent. It does not mean 20 trivia
 questions, and it does not require exact final wording.
@@ -1008,3 +1048,6 @@ Treat each item as a separate measured change. Do not combine it with a prompt e
 14. Tavily, “Tavily Search.” [Online]. Available:
    https://docs.tavily.com/documentation/api-reference/endpoint/search
 15. Fantasy Premier League, private mini-league standings. Accessed: 28 Oct. 2026.
+16. Premier League, “What’s happening with FPL chips in 2026/27.” Accessed: 30 Oct. 2026.
+    [Online]. Available:
+    https://www.premierleague.com/en/news/4679879/whats-happening-with-fpl-chips-in-202627
