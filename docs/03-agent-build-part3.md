@@ -1,6 +1,6 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 7, 30 October 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 8, 30 October 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
@@ -19,6 +19,9 @@ preparation is explicitly delegated to AI. The commit is part of Step 17.
 **Changed in version 7:** include explicit chip timing in recommendations. Prompt version 2
 requires the agent to report that decision and its limits. This implementation was delegated
 to AI; it does not complete any learner understanding check.
+
+**Changed in version 8:** set the top-10 checkpoints for 1, 15 and 30 December.
+Keep each checkpoint's outcome even if the target is reached at a later date.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -61,8 +64,20 @@ A later user interface must call the same agent service as the CLI. Do not put F
 
 ## Personal league goal — December 2026
 
-**Target:** finish in the top 10 of my private mini-league during December 2026.
-The exact December cutoff is still to be confirmed.
+**Target:** reach the top 10 of my private mini-league.
+
+Check progress on these dates. If the target is missed at an earlier checkpoint,
+continue towards the next one. Record all three outcomes; a later success does
+not replace an earlier result.
+
+| Checkpoint | Date | League rank | Gap to tenth | Target met? |
+| --- | --- | --- | --- | --- |
+| Primary target | 1 December 2026 | Pending | Pending | Pending |
+| Second checkpoint | 15 December 2026 | Pending | Pending | Pending |
+| Final checkpoint | 30 December 2026 | Pending | Pending | Pending |
+
+Use the latest official standings at each checkpoint. Record the lookup time
+and gameweek so the result has a clear date.
 
 Starting position checked on 28 October 2026, after GW8 \[15\]:
 
