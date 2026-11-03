@@ -1,11 +1,11 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 8, 30 October 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 9, 3 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
-**Current route:** the archived Step 17 review and failure classification are complete,
-and the new GW9 baseline has saved results and verified traces. Keep the personal weekly
+**Current route:** the archived Step 17 review and both runs' failure classifications are
+complete. The GW9 baseline has saved results and verified traces. Keep the personal weekly
 FPL workflow active for the December league goal. The new answers still need a separate
 quality review before reporting their full-task or groundedness scores.
 Use [Part 3: understand and own the implementation](03-agent-build-part3-learning.md) for
@@ -22,6 +22,9 @@ to AI; it does not complete any learner understanding check.
 
 **Changed in version 8:** set the top-10 checkpoints for 1, 15 and 30 December.
 Keep each checkpoint's outcome even if the target is reached at a later date.
+
+**Changed in version 9:** complete the GW9 failure classification, keep each run's review
+in a separate file, and allow `undetermined` when the saved evidence cannot establish a cause.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -470,7 +473,7 @@ Review `post-gw6-01` against `evals/archive/fpl-agent-v2-post-gw6.jsonl`, starti
 answers, then the other 17. Keep its run files and snapshot unchanged. The new dataset uses
 the run name `pre-gw9-01`; changing data does not establish an improvement over the old run.
 
-The AI-assisted review is now saved in `manual-eval-record.md` and the versioned
+The AI-assisted review is now saved in `manual-eval-record-post-gw6-01.md` and the versioned
 `post-gw6-01-*-v2.jsonl` review artifacts. Its five scores are 15/20 expected-tool
 matches, 10/20 argument passes, 11/20 full-task passes, 15/20 fact-recall passes and
 17/20 groundedness passes. All ten cases with failing checks have primary categories;
@@ -500,8 +503,15 @@ Named Langfuse prompt version 2 was not published, so the remote named-prompt
 link is absent. The local v2 prompt filename and matching prompt hash are recorded.
 This did not prevent trace delivery.
 
-These are execution and automatic-check results. The new run has not received
-a complete manual quality review. It uses different data, tools and prompt from
+**Failure classification complete, 3 November:** the eight cases with automatic-check
+failures or execution errors have written evidence in `manual-eval-pre-gw9-01.md`
+\[18\]. Six have primary cause `arguments`, one has `tool selection`, and one is
+`undetermined`. The last category records the empty response after a successful
+recommendation tool call; its underlying cause remains unknown. Additional answer
+problems are recorded separately from each selected primary cause.
+
+The new run has not received a complete manual quality review of all 20 answers.
+It uses different data, tools and prompt from
 the archived run, so the two runs do not form a controlled improvement experiment.
 
 “Twenty questions” means 20 fixed test cases for the complete agent. It does not mean 20 trivia
@@ -590,8 +600,11 @@ For every failed case, record one primary cause:
 
 ```text
 tool selection | arguments | tool defect | prompt instruction |
-unsupported claim | ambiguity handling | evaluation defect
+unsupported claim | ambiguity handling | evaluation defect | undetermined
 ```
+
+Use `undetermined` when the saved evidence cannot establish a cause. Record the
+observed failure without assigning an unsupported explanation to a tool or prompt.
 
 **Checkpoint:** the baseline run has 20 traces, aggregate scores and a written cause for every
 failure.
@@ -1096,3 +1109,5 @@ Treat each item as a separate measured change. Do not combine it with a prompt e
     https://www.premierleague.com/en/news/4679879/whats-happening-with-fpl-chips-in-202627
 17. FPL Agent, [GW9 execution and trace verification](../data/evals/runs/pre-gw9-01-verification.json),
     30 October 2026. Run `pre-gw9-01`.
+18. FPL Agent, [GW9 failure classification](../manual-eval-pre-gw9-01.md),
+    3 November 2026. Run `pre-gw9-01`.

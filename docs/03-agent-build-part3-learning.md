@@ -1,6 +1,6 @@
 # FPL Agent — Part 3: understand and own the implementation
 
-Version 3, 30 October 2026.
+Version 4, 3 November 2026.
 
 **Goal:** I can follow one question through the agent, explain the important
 boundaries, review its evidence and make one change that I understand.
@@ -30,9 +30,15 @@ The code, prompt and review record were committed as `89e4d96` before running
 the new GW9 dataset as `pre-gw9-01`. That run is a separate experiment; it
 does not measure improvement against a different snapshot and case set.
 
+The eight flagged `pre-gw9-01` cases now have an AI-assisted failure classification
+in [the GW9 review](../manual-eval-pre-gw9-01.md): six `arguments`, one
+`tool selection` and one `undetermined`. The empty-response cause remains unknown.
+This completes the failure-classification task; it does not mark any independent
+learning check complete or supply manual quality scores for all 20 new answers.
+
 ## What already exists
 
-Repository check on 30 October 2026:
+Repository status updated 3 November 2026:
 
 - Steps 13–16 have implementations: snapshots, tools, the agent loop and tracing.
 - The Step 17 runner has saved `post-gw6-01`: 20 results, automatic scores and
@@ -44,14 +50,15 @@ Repository check on 30 October 2026:
   and 17/20 groundedness passes. Ten cases had a failing check; their primary
   categories include one strict-matcher evaluation defect. The no-answer error
   counts as a groundedness failure, not an unsupported-claim incident.
-- The reusable result line is in `manual-eval-record.md`. Completion of the
+- The reusable result line is in `manual-eval-record-post-gw6-01.md`. Completion of the
   assisted review does not establish independent understanding of every case.
 - The active 20-case dataset now uses a validated post-GW8 snapshot; the old
   dataset is preserved in `evals/archive/fpl-agent-v2-post-gw6.jsonl`.
 - `pre-gw9-01` saved 20 results: 18 completed answers and two execution errors.
   All 20 traces were verified in Langfuse. Automatic expected-tool checks
-  passed for 19/20 cases and argument checks for 13/20. Its full manual
-  quality review remains separate from the completed archived-run review.
+  passed for 19/20 cases and argument checks for 13/20. All eight flagged cases
+  have written classifications. A full manual quality review of all 20 answers
+  remains separate from this classification and the completed archived-run review.
 - Steps 18 onward remain in the delivery roadmap.
 
 These are software status statements. Your understanding of each part remains

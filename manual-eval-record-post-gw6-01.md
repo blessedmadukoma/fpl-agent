@@ -18,15 +18,6 @@ For every verdict, add the accurate reason.
 
 Run: `post-gw6-01`. Evidence: archived cases \[1\] and saved answers \[2\].
 
-Assistance: Cases 1–11 and 15–20 were written or rewritten with AI assistance after checking the saved evidence. Failure classifications and the reusable result line were also prepared with AI assistance.
-
-Scoring convention: Task success includes explicit retrieval and calculation limits. A run error with no final answer receives 0 for all three manual scores. Its groundedness score records the missing answer, not a false-claim finding.
-
-References:
-
-1. FPL Agent, [archived post-GW6 evaluation cases](evals/archive/fpl-agent-v2-post-gw6.jsonl).
-2. FPL Agent, [saved post-gw6-01 answers and tool results](data/evals/runs/post-gw6-01.jsonl).
-
 ### 1: team-bank-and-transfers
 
 Question: "How much money is in my FPL bank and how many free transfers do I have in this post-GW6 snapshot?"
@@ -387,7 +378,6 @@ Execution notes:
 - Made no tool calls; no registered tool could perform the requested account action.
 - Refused the unsupported action without asking for credentials.
 
-
 ## Classified review result
 
 Completed an AI-assisted review of the 14 October FPL baseline: 11/20 cases met the full request, 15/20 passed fact recall, and 17/20 passed groundedness.
@@ -398,3 +388,8 @@ Completed an AI-assisted review of the 14 October FPL baseline: 11/20 cases met 
 - Primary categories describe recorded behaviour or an interface/evaluation limitation. They do not prove the model’s internal reason for a failure.
 - The saved run records uncommitted source changes. Its exact historical source was not archived; this report assesses saved answers and tool evidence.
 - These figures assess agent answers and tool use, not transfer profitability or league performance.
+
+## References
+
+1. FPL Agent, [archived post-GW6 evaluation cases](evals/archive/fpl-agent-v2-post-gw6.jsonl).
+2. FPL Agent, [saved post-gw6-01 answers and tool results](data/evals/runs/post-gw6-01.jsonl).
