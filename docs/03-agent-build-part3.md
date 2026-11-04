@@ -483,10 +483,11 @@ not evidence that the transfer policy improves FPL scores.
 
 ### GW9 baseline execution — 30 October
 
-`pre-gw9-01` ran from clean commit `89e4d96` using local `gemma4:12b`, prompt
+`pre-gw9-01` ran from clean commit `800771b` using local `gemma4:12b`, prompt
 `system-v2.md` and the fixed 28 October snapshot. It saved all 20 case records:
 18 completed answers and two execution errors. Automatic checks passed for
-19/20 expected-tool selections and 13/20 argument sets \[17\].
+19/20 expected-tool selections and 13/20 argument sets \[17\]. Its run records
+give `89e4d96`, the hash of this commit before a history rewrite.
 
 All 20 Langfuse traces were verified through the remote API. Their recorded
 outputs, case IDs, snapshot, prompt hash and clean source commit match the local run.

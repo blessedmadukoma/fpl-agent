@@ -161,7 +161,7 @@ _Written before the change:_
 - **Side effects:** cases 5 (`unsupported-wildcard-value`), 16 (`fixture-clean-sheet-estimate`) and 17 (`supported-chip-gains`) also set the wrong `horizon`; expected after the change: 1 in each.
 - **Everything else:** all other cases keep their Step 17 result.
 
-_Method:_ five runs per case for the four cases before and after the change, then one full 20-case run after it. Temperature 1 (the Ollama default for `gemma4:12b`). Same snapshot, model and prompt (hash `5cd1f043…`) as Step 17. The "before" runs were dirty only because of the uncommitted 4-case file; the agent code was identical to `89e4d96`.
+_Method:_ five runs per case for the four cases before and after the change, then one full 20-case run after it. Temperature 1 (the Ollama default for `gemma4:12b`). Same snapshot, model and prompt (hash `5cd1f043…`) as Step 17. The "before" runs were dirty only because of the uncommitted 4-case file; the agent code was identical to `800771b`.
 
 _Change record:_
 
@@ -170,7 +170,7 @@ _Change record:_
   - `ChipValuesInput.horizon`
   - `RecommendationInput.horizon`
 - **Why:** before the change, the model passed 9, the target gameweek number, in 13 of its 19 calls, and the schema gave `horizon` only a name and limits.
-- **Commits:** `10917fb test(evals): add the four-case horizon subset for Step 18`; `7f27aba fix(agent): describe horizon as a count of gameweeks`
+- **Commits:** `23e098a test(evals): add the four-case horizon subset for Step 18`; `6b59f12 fix(agent): describe horizon as a count of gameweeks`
 - **Runs:** `step18-before-r1`–`r5`, `step18-after-r1`–`r5`, `step18-after-full`
 
 _Result:_
@@ -198,7 +198,7 @@ _Written before the runs:_
 - **Problem:** at temperature 1 (the `gemma4:12b` default), the same question gets different tool arguments on different runs. Case 4 passed five different values in five runs before the Step 18 change.
 - **Change:** temperature 0, set with `TEMPERATURE` and recorded in each run manifest. Everything else is as in Step 18: same snapshot, model, prompt, cases and `horizon` description.
 - **Decision rule:** keep temperature 0 if cases 5, 16 and 17 stay right in every run, case 4 is right in a higher share of runs than at temperature 1 (3 of 5), and no case that passed in `step18-after-full` fails in `step18b-t0-full`.
-- **Commit:** `a331f68 feat(agent): configure and record model temperature`
+- **Commit:** `c65b961 feat(agent): configure and record model temperature`
 - **Runs:** `step18b-t0-r1`–`r10`, `step18b-t0-full`
 
 _Result:_
@@ -210,7 +210,7 @@ _Result:_
 | 16: fixture-clean-sheet-estimate | 1 | 5 of 5 | 1, 1, 1, 1, 1 | 10 of 10 | 1 in all 10 runs |
 | 17: supported-chip-gains | 1 | 5 of 5 | 1, 1, 1, 1, 1 | 10 of 10 | 1 in all 10 runs |
 
-All ten runs at temperature 0 chose the same tool and arguments for each case. The runs recorded commit `a331f68` with no uncommitted changes.
+All ten runs at temperature 0 chose the same tool and arguments for each case. The runs used commit `c65b961` with no uncommitted changes. Their run records give `a331f68`, the hash of this commit before a history rewrite.
 
 _Full run (`step18b-t0-full`) against `step18-after-full`:_
 

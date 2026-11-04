@@ -26,7 +26,7 @@ saved FPL responses. See [dataset instructions](../evals/README.md).
 
 The AI-assisted Step 17 review and failure classification are complete for
 `post-gw6-01`. Keep its original run files and archived post-GW6 dataset.
-The code, prompt and review record were committed as `89e4d96` before running
+The code, prompt and review record were committed as `800771b` before running
 the new GW9 dataset as `pre-gw9-01`. That run is a separate experiment; it
 does not measure improvement against a different snapshot and case set.
 
