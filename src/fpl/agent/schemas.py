@@ -38,7 +38,14 @@ ProjectionModel = Literal["full", "shrunk_blend",
                           "blend", "ep_next", "ppg", "form", "zero"]
 ElementId = Annotated[int, Field(strict=True, gt=0)]
 Gameweek = Annotated[int, Field(strict=True, ge=1, le=38)]
-Horizon = Annotated[int, Field(strict=True, ge=1, le=6)]
+HORIZON_DESCRIPTION = (
+    "Number of consecutive gameweeks to evaluate, starting with and "
+    "including the snapshot’s target gameweek. This is a count, not a "
+    "gameweek number. Use 1 for the target gameweek only."
+)
+Horizon = Annotated[
+    int, Field(strict=True, ge=1, le=6, description=HORIZON_DESCRIPTION)
+]
 
 
 class ToolInput(BaseModel):
@@ -74,7 +81,9 @@ class FixtureOutlookInput(ToolInput):
 
 
 class ChipValuesInput(ToolInput):
-    horizon: Annotated[int, Field(strict=True, ge=1, le=14)] = 4
+    horizon: Annotated[
+        int, Field(strict=True, ge=1, le=14, description=HORIZON_DESCRIPTION)
+    ] = 4
     model: ProjectionModel = "full"
 
 
@@ -87,7 +96,9 @@ class HistoricalLeadersInput(ToolInput):
 
 
 class RecommendationInput(ToolInput):
-    horizon: Annotated[int, Field(strict=True, ge=1, le=6)] = 4
+    horizon: Annotated[
+        int, Field(strict=True, ge=1, le=6, description=HORIZON_DESCRIPTION)
+    ] = 4
     model: ProjectionModel = "full"
     threshold: Annotated[float, Field(ge=0, allow_inf_nan=False)] = 2.0
     max_hits: Annotated[int, Field(strict=True, ge=0)] = 0
