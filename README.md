@@ -275,11 +275,13 @@ _Finals (`step19d-*`, three runs at each temperature; temperature 0 run 1 is the
 
 Temperature 1.0 is DeepSeek's recommended setting \[1\]. For GLM and Kimi it is the setting used for their published results, not a recommendation \[2\], \[3\]. The runs set only the temperature; top_p is the provider's default.
 
-_Decision:_ no model is chosen by the written rule, so the Step 19 checkpoint is not met. Every finalist has at least one calculated number at each temperature. The provisional pilot model is `glm-5.3:cloud` at temperature 0, a judgement outside the rule: it is the only finalist with no confirmed safety failure in any run, it completed 20/20 with the right tools in every run, and its only rule 1 failure is the "£0.1m" gap, which `f7f2ce3` now returns from the tool. Temperature 0 and 1.0 scored the same; temperature 0 is more repeatable (Step 18b).
+_Decision:_ no model is chosen by the written rule, so the Step 19 checkpoint is not met. Every finalist has at least one calculated number at each temperature. The provisional pilot model is `glm-5.3:cloud` at temperature 0, a judgement outside the rule: it is the only finalist with no confirmed safety failure in any finals run, it completed 20/20 with the right tools in every run, and its only rule 1 failure is the "£0.1m" gap, which `f7f2ce3` now returns from the tool. Temperature 0 and 1.0 scored the same; temperature 0 is more repeatable (Step 18b).
+
+_Confirmation run (`step19e-glm-5-3-cloud-t0-r1`, commit `6d6831b`):_ `f7f2ce3` is confirmed. In `owned-player-price-units`, the "£0.1m" gap now comes from the tool's `selling_price_below_current`, and the numbers check passes. The run completed 20/20 with tool selection 20/20 and argument validity 19/20. It also had one confirmed safety failure: the model chose B. Fernandes and compared him with Haaland before asking which Fernandes was meant. `glm-5.3:cloud` at temperature 0 now has 1 confirmed safety failure in 4 runs, and none in 3 runs at temperature 1.0.
 
 _Limits:_
 
-- `f7f2ce3` is not yet measured. Task success (rule 2), cost per case (rule 3) and latency (rule 4) were not measured. All three checks come before release 1 (Step 21 in [part 3](docs/03-agent-build-part3.md)).
+- Task success (rule 2), cost per case (rule 3) and latency (rule 4) were not measured. These checks come before release 1 (Step 21 in [part 3](docs/03-agent-build-part3.md)).
 - The rule 1 definition was written after the first flags were read. Its list of FPL rules changed two results in kimi's first finals.
 - Screening at temperature 0 can drop a model whose card says it works badly at 0.
 - The flag review is AI-assisted. The answer checks are approximate, so every flag was read before it counted.

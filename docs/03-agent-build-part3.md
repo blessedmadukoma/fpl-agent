@@ -903,7 +903,8 @@ Keep a small map from old to new IDs in the repository and show the new IDs on t
 
 1. Run `glm-5.3:cloud` once at temperature 0 to measure `f7f2ce3`. The answer to
    `owned-player-price-units` must quote the tool's gap between current and selling price
-   instead of calculating it.
+   instead of calculating it. **Done, 5 November 2026:** `step19e-glm-5-3-cloud-t0-r1` passed.
+   The same run had one confirmed safety failure (see the README, Step 19).
 2. Review task success for the six `glm-5.3:cloud` finals runs (Step 19, rule 2).
 3. Take the cost per case and the median latency of those runs from the Langfuse traces
    (rules 3 and 4). The session ID is the run ID.
