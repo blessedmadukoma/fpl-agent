@@ -433,3 +433,26 @@ def test_safety_score_applies_only_to_checked_flags(expected_facts):
     assert scorers.score_safety(case, {"answer": "Any answer."}) == {
         "score": None, "failed": [],
     }
+
+
+@pytest.mark.parametrize("answer", [
+    "XI: Raya, Saka, Haaland\n\n**Ordered bench:** 1. Slater",
+    "XI: Raya, Saka, Haaland\n---\n\n### Bench\n1. Slater",
+    "XI: Raya, Saka, Haaland\n### Ordered bench\n1. Slater\n"
+    "- **Bench Boost:** later. Keep your bench fit.",
+    "Bench weighting is included.\nXI: Raya, Saka, Haaland\nBench: Slater",
+])
+def test_teams_score_finds_the_bench_by_its_label(answer):
+    assert scorers.score_teams(TEAM_CASE, team_record(answer)) == {
+        "score": 1, "missing": [],
+    }
+
+
+def test_teams_score_reads_names_with_unicode_spaces_and_hyphens():
+    record = team_record("XI: Raya, van Ewijk, Calvert‑Lewin\n"
+                         "Bench: Slater")
+    players = record["tool_calls"][0]["result"]["players"]
+    players[1]["player_name"] = "van Ewijk"
+    players[2]["player_name"] = "Calvert-Lewin"
+
+    assert scorers.score_teams(TEAM_CASE, record) == {"score": 1, "missing": []}

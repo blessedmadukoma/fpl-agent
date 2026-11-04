@@ -89,6 +89,14 @@ def score_numbers(case, saved_result):
     return {"score": 0 if unsupported else 1, "unsupported": unsupported}
 
 
+PLAIN_SPACES_AND_HYPHENS = str.maketrans(
+    {" ": " ", " ": " ", "‐": "-", "‑": "-"})
+# A bench label starts its line, as in "**Ordered bench:**" or "### Bench".
+BENCH_LABEL = re.compile(
+    r"^[\s#*>\-\d.|]*(ordered\s+)?bench(?!\s+(boost|weighting))\b",
+    re.IGNORECASE | re.MULTILINE)
+
+
 def score_teams(case, saved_result):
     """when the answer gives a team, it must list all 11 starters and all 4 bench players"""
     cases_expected_facts = case.get("expected_facts", {})
@@ -120,14 +128,11 @@ def score_teams(case, saved_result):
     starter_names = [name_for(pid) for pid in starters]
     bench_names = [name_for(pid) for pid in bench]
 
-    matches = list(re.finditer(r"Bench(?! Boost)", answer))
-    if matches:
-        split_at = matches[-1].start()
-        team_part = answer[:split_at]
-        bench_part = answer[split_at:]
-    else:
-        team_part = answer
-        bench_part = ""
+    answer = answer.translate(PLAIN_SPACES_AND_HYPHENS)
+    label = BENCH_LABEL.search(answer)
+    split_at = label.start() if label else len(answer)
+    team_part = answer[:split_at]
+    bench_part = answer[split_at:]
 
     team_part = "\n".join(
         line for line in team_part.split("\n") if "captain" not in line.lower()
