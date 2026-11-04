@@ -691,6 +691,14 @@ pilot.
 
 ### 19.1 Temperature, candidates and answer checks
 
+Order of work in Step 19:
+
+1. Add the three answer checks described below.
+2. Run the screening: every candidate once at temperature 0.
+3. Run the finalists: three runs at 0 and three at the model card's temperature.
+4. Review the finalists' answers by hand.
+5. Choose by the rule and add the model table to the README.
+
 Step 18b set temperature 0 for `gemma4:12b`. Another model's card can recommend a different
 value, and some models answer worse at 0. Test in two stages, so that each stage changes one
 thing:
@@ -704,15 +712,15 @@ Put the temperature in the run name, for example `step19-kimi-k3-cloud-t06-r2` f
 names cannot contain dots. The manifest records the model and the temperature; `TEMPERATURE`
 set on the command line overrides `.env`.
 
-Candidates on 4 November 2026: `gemma4:12b` (local baseline), `gpt-oss:120b` on Ollama Cloud,
-`minimax-m3.1-flash:cloud`, `kimi-k3:cloud`, `deepseek-v4.1-flash:cloud` and `glm-5.3:cloud`.
+Candidates on 4 November 2026: `gemma4:12b` (local baseline), `gemma4:cloud`,
+`gpt-oss:120b-cloud`, `minimax-m3.1-flash:cloud`, `kimi-k3:cloud`, `deepseek-v4.1-flash:cloud`
+and `glm-5.3:cloud`.
 A public server cannot reach a model on the laptop, so the pilot needs a cloud model. Leave out
 `gemma4:e4b`: it is smaller than the baseline, which fails 3 of 20 cases, and it runs only
-locally. Check each cloud tag in Ollama's cloud model list before the runs; a tag without the
-cloud suffix can download the full local model.
+locally. Use the cloud tags above exactly; `gpt-oss:120b` without `-cloud` names the local model.
 
 ```bash
-for m in gemma4:12b gpt-oss:120b-cloud minimax-m3.1-flash:cloud kimi-k3:cloud \
+for m in gemma4:12b gemma4:cloud gpt-oss:120b-cloud minimax-m3.1-flash:cloud kimi-k3:cloud \
          deepseek-v4.1-flash:cloud glm-5.3:cloud; do
   run="step19-$(printf '%s' "$m" | tr ':.' '--')-t0-r1"
   TEMPERATURE=0 make eval-baseline EVAL_OLLAMA_MODEL="$m" EVAL_RUN="$run"
