@@ -198,20 +198,25 @@ _Written before the runs:_
 - **Problem:** at temperature 1 (the `gemma4:12b` default), the same question gets different tool arguments on different runs. Case 4 passed five different values in five runs before the Step 18 change.
 - **Change:** temperature 0, set with `TEMPERATURE` and recorded in each run manifest. Everything else is as in Step 18: same snapshot, model, prompt, cases and `horizon` description.
 - **Decision rule:** keep temperature 0 if cases 5, 16 and 17 stay right in every run, case 4 is right in a higher share of runs than at temperature 1 (3 of 5), and no case that passed in `step18-after-full` fails in `step18b-t0-full`.
-- **Commit:** `…`
-- **Runs:** `step18b-t0-r1`–`r3`, `step18b-t0-full`
+- **Commit:** `a331f68 feat(agent): configure and record model temperature`
+- **Runs:** `step18b-t0-r1`–`r10`, `step18b-t0-full`
 
 _Result:_
 
 | Case | Expected horizon | Temperature 1: right in (Step 18 after) | Temperature 1: values passed | Temperature 0: right in | Temperature 0: values passed |
 | --- | --- | --- | --- | --- | --- |
-| 4: fixture-outlook | 5 | 3 of 5 | 5, 5, 5, 10, 10 | … of 3 | … |
-| 5: unsupported-wildcard-value | 1 | 5 of 5 | 1, 1, 1, 1, 1 | … of 3 | … |
-| 16: fixture-clean-sheet-estimate | 1 | 5 of 5 | 1, 1, 1, 1, 1 | … of 3 | … |
-| 17: supported-chip-gains | 1 | 5 of 5 | 1, 1, 1, 1, 1 | … of 3 | … |
+| 4: fixture-outlook | 5 | 3 of 5 | 5, 5, 5, 10, 10 | 10 of 10 | 5 in all 10 runs |
+| 5: unsupported-wildcard-value | 1 | 5 of 5 | 1, 1, 1, 1, 1 | 10 of 10 | 1 in all 10 runs |
+| 16: fixture-clean-sheet-estimate | 1 | 5 of 5 | 1, 1, 1, 1, 1 | 10 of 10 | 1 in all 10 runs |
+| 17: supported-chip-gains | 1 | 5 of 5 | 1, 1, 1, 1, 1 | 10 of 10 | 1 in all 10 runs |
+
+All ten runs at temperature 0 chose the same tool and arguments for each case. The runs recorded commit `a331f68` with no uncommitted changes.
 
 _Full run (`step18b-t0-full`) against `step18-after-full`:_
 
-- …
+- Every case that passed at temperature 1 also passed at temperature 0.
+- Case 4 (`fixture-outlook`) changed from error to completed, with `horizon: 5`. Manual review: the answer lists the correct clubs and home or away fixtures.
+- Case 15 (`recommendation-high-threshold-hold`) completed, with every expected fact right (hold, gain 3.78, threshold 1000, captain Haaland, hold applies to GW9 only). The answer adds an unsupported claim that 1000 "corresponds to 10.0 in the internal scoring system"; the tool result has no such conversion. It failed with an empty model reply in Step 17 and in `step18-after-full`; the cause of that empty reply is still not established.
+- `player-fpl-assists` called `get_historical_leaders` instead of `get_player_summary`, as in Step 17. At temperature 1 it chose the right tool once. It did not pass in either run (argument validity 0), so it does not count against the decision rule. It is a repeatable failure to fix next.
 
-_Decision:_ temperature … , because … .
+_Decision:_ temperature 0. All three parts of the decision rule hold: cases 5, 16 and 17 were right in 10 of 10 runs; case 4 was right in 10 of 10 (3 of 5 at temperature 1); and no case that passed at temperature 1 failed at temperature 0. The automatic scores check tool choice and arguments only. Manual review: case 4's answer is correct; case 15's answer adds one unsupported claim.
