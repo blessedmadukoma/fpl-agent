@@ -15,6 +15,7 @@ class SquadPlayerSchema(BaseModel):
     current_price: int
     selling_price: int
     price_change_since_purchase: int
+    selling_price_below_current: int
     status: str
     news: str | None = None
 

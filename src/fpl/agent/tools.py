@@ -88,6 +88,7 @@ def get_my_team(snapshot_context, con: duckdb.DuckDBPyConnection) -> MyTeamSchem
             current_price=player_output[4],
             selling_price=player_row.selling_price,
             price_change_since_purchase=player_output[4] - player_row.purchase_price,
+            selling_price_below_current=player_output[4] - player_row.selling_price,
             status=player_output[5],
             news=player_output[6]
         )

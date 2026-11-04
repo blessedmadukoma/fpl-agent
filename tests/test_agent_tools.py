@@ -48,6 +48,7 @@ def frozen_team(tmp_path, monkeypatch):
             "current_price": 52,
             "selling_price": 51,
             "price_change_since_purchase": 2,
+            "selling_price_below_current": 1,
             "status": "d" if element == 15 else "a",
             "news": "Fitness test" if element == 15 else None,
         }
