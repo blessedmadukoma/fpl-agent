@@ -89,6 +89,61 @@ def score_numbers(case, saved_result):
     return {"score": 0 if unsupported else 1, "unsupported": unsupported}
 
 
+def score_teams(case, saved_result):
+    """when the answer gives a team, it must list all 11 starters and all 4 bench players"""
+    cases_expected_facts = case.get("expected_facts", {})
+    answer = saved_result.get("answer")
+
+    if cases_expected_facts.get("first_gw_player_names") is None or answer is None:
+        return {"score": None, "missing": []}
+
+    recommendation_call = None
+    for call in saved_result.get("tool_calls", []):
+        if call["name"] == "get_recommendation" and call.get("status") == "completed":
+            recommendation_call = call
+            break
+
+    if recommendation_call is None:
+        return {"score": 0, "missing": []}
+
+    result = recommendation_call.get("result") or {}
+    plan = result["selected_gw_plans"][0]
+    starters = plan.get("team_xi")
+    bench = plan.get("ordered_bench")
+
+    player_names = {p["element_id"]: p["player_name"]
+                    for p in result["players"]}
+
+    def name_for(player_id):
+        return player_names.get(player_id)
+
+    starter_names = [name_for(pid) for pid in starters]
+    bench_names = [name_for(pid) for pid in bench]
+
+    matches = list(re.finditer(r"Bench(?! Boost)", answer))
+    if matches:
+        split_at = matches[-1].start()
+        team_part = answer[:split_at]
+        bench_part = answer[split_at:]
+    else:
+        team_part = answer
+        bench_part = ""
+
+    team_part = "\n".join(
+        line for line in team_part.split("\n") if "captain" not in line.lower()
+    )
+
+    missing = []
+    for name in starter_names:
+        if name is None or name not in team_part:
+            missing.append(name)
+    for name in bench_names:
+        if name is None or name not in bench_part:
+            missing.append(name)
+
+    return {"score": 0 if missing else 1, "missing": missing}
+
+
 def score_arguments(case, saved_result):
     expected_arguments = case.get("expected_arguments", {})
 

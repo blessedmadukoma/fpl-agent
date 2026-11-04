@@ -9,6 +9,7 @@ from fpl.config import Settings
 from fpl.evals.scorers import (
     score_arguments,
     score_numbers,
+    score_teams,
     score_tool_selection,
 )
 
@@ -123,6 +124,7 @@ def score_results(
             "tool_selection": score_tool_selection(case, result),
             "argument_validity": score_arguments(case, result),
             "numbers_validity": score_numbers(case, result),
+            "teams_validity": score_teams(case, result),
         }
         output.append(result_copy)
 

@@ -350,3 +350,43 @@ def test_numbers_score_does_not_apply_without_an_answer():
     assert scorers.score_numbers({}, numbers_record(None, {})) == {
         "score": None, "unsupported": [],
     }
+
+
+TEAM_CASE = {"expected_facts": {"first_gw_player_names": {"1": "Raya"}}}
+
+
+def team_record(answer, status="completed"):
+    players = [
+        {"element_id": 1, "player_name": "Raya"},
+        {"element_id": 2, "player_name": "Saka"},
+        {"element_id": 3, "player_name": "Haaland"},
+        {"element_id": 4, "player_name": "Slater"},
+    ]
+    plan = {"team_xi": [1, 2, 3], "ordered_bench": [4]}
+    return {"answer": answer, "tool_calls": [{
+        "name": "get_recommendation", "status": status,
+        "result": {"players": players, "selected_gw_plans": [plan]},
+    }]}
+
+
+@pytest.mark.parametrize(("answer", "missing"), [
+    ("XI: Raya, Saka\nCaptain: Haaland\nBench: Slater", ["Haaland"]),
+    ("### Starting XI & Bench\nXI: Raya, Saka, Haaland\nBench: Slater", []),
+    ("XI: Raya, Saka, Haaland\nBench: Slater\nSave the Bench Boost.", []),
+])
+def test_teams_score_needs_every_starter_and_bench_player(answer, missing):
+    assert scorers.score_teams(TEAM_CASE, team_record(answer)) == {
+        "score": 0 if missing else 1, "missing": missing,
+    }
+
+
+def test_teams_score_applies_only_to_cases_that_ask_for_a_team():
+    assert scorers.score_teams({"expected_facts": {}}, team_record("Raya")) == {
+        "score": None, "missing": [],
+    }
+
+
+def test_teams_score_fails_without_a_completed_recommendation():
+    record = team_record("XI: Raya, Saka, Haaland\nBench: Slater", "error")
+
+    assert scorers.score_teams(TEAM_CASE, record) == {"score": 0, "missing": []}
