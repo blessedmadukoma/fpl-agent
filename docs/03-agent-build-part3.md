@@ -672,9 +672,22 @@ two or three models:
 - `gpt-oss:120b` on Ollama Cloud;
 - one cheaper cloud model, for example `glm-5.3-flash` or `gemma4` on Ollama Cloud.
 
-Write the decision rule before the runs. Suggested rule: choose the cheapest model with no
-unsupported numbers in the manual groundedness review and the highest task success; a tie goes to
-the lower median latency. The rule chooses a model and its temperature together (19.1).
+Write both rules before the runs.
+
+**Screening cut.** A model goes to the finals only with 20/20 completed, at least 19/20 for tool
+selection and no confirmed safety failure. Rank the others by argument validity, then by the
+numbers check. A check failure counts only after you have read it and confirmed a real error.
+
+**Final rule, in this order:**
+
+1. no unsupported numbers in the hand review;
+2. the highest task success;
+3. the lowest cost per case;
+4. the lower median latency.
+
+`gemma4:12b` is the baseline only. A public server cannot reach the laptop, so it cannot be
+chosen, even though it costs nothing. The rule chooses a model and its temperature together
+(19.1).
 
 Record for each model:
 
@@ -693,11 +706,24 @@ pilot.
 
 Order of work in Step 19:
 
-1. Add the three answer checks described below.
-2. Run the screening: every candidate once at temperature 0.
-3. Run the finalists: three runs at 0 and three at the model card's temperature.
-4. Review the finalists' answers by hand.
-5. Choose by the rule and add the model table to the README.
+1. Add the three answer checks described below, and test them on a saved run with
+   `fpl rescore`. Done on 4 November 2026: on `step18b-t0-full` they flag only the two known
+   problems (Haaland missing from the starting XI, and the unsupported "10.0").
+2. Write the screening cut and the final rule (Step 19 above) before any run.
+3. Commit and push. Start only when `git status` shows no changes: every run records the
+   commit and whether the code had uncommitted changes.
+4. Do not change code in this folder until the runs finish. Each `make eval-baseline` loads the
+   code as it is at that moment. Build Release 1 in a separate Git worktree.
+5. Smoke test: run each model on the four-case subset and confirm it made tool calls. A model
+   that answers text but cannot call tools through the OpenAI-compatible endpoint fails every
+   case.
+6. Run the screening: every candidate once at temperature 0.
+7. Before applying the cut, open every 0 from the answer checks. The checks were tested only on
+   `gemma4:12b` answers; another model may write "Substitutes", "1,000" or a differently worded
+   refusal. Count only real errors.
+8. Run the finalists: three runs at 0 and three at the model card's temperature.
+9. Review the finalists' answers by hand.
+10. Choose by the rule and add the model table to the README.
 
 Step 18b set temperature 0 for `gemma4:12b`. Another model's card can recommend a different
 value, and some models answer worse at 0. Test in two stages, so that each stage changes one
@@ -718,6 +744,19 @@ and `glm-5.3:cloud`.
 A public server cannot reach a model on the laptop, so the pilot needs a cloud model. Leave out
 `gemma4:e4b`: it is smaller than the baseline, which fails 3 of 20 cases, and it runs only
 locally. Use the cloud tags above exactly; `gpt-oss:120b` without `-cloud` names the local model.
+
+Smoke test (step 5):
+
+```bash
+for m in gemma4:12b gemma4:cloud gpt-oss:120b-cloud minimax-m3.1-flash:cloud kimi-k3:cloud \
+         deepseek-v4.1-flash:cloud glm-5.3:cloud; do
+  run="step19-smoke-$(printf '%s' "$m" | tr ':.' '--')"
+  TEMPERATURE=0 make eval-baseline EVAL_DATASET=evals/step18-horizon-4.jsonl \
+    EVAL_OLLAMA_MODEL="$m" EVAL_RUN="$run"
+done
+```
+
+Screening (step 6):
 
 ```bash
 for m in gemma4:12b gemma4:cloud gpt-oss:120b-cloud minimax-m3.1-flash:cloud kimi-k3:cloud \
@@ -743,6 +782,9 @@ runs, add checks that need no person:
 - a refusal case does not claim an action or a live value.
 
 Review the finalists' answers by hand for unsupported numbers, as the decision rule requires.
+
+In the README model table, state two limits. Screening at temperature 0 can drop a model whose
+card says it works badly at 0. Each price comes from Ollama's pricing page on a stated date.
 
 **Update:** `README.md` with a model table beside the Step 18 table. Do not combine the two
 changes in one run.
