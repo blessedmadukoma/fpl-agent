@@ -695,7 +695,9 @@ supported, for example three buys, or four gameweeks for GW9 to GW12. A number t
 calculates from tool values is unsupported, even when it is correct, for example a difference of
 expected points or a price rise. The Python tools remain the source of every number. A fixed FPL
 rule is supported only as one of these values: a squad of 15 (2 GKP, 5 DEF, 5 MID, 3 FWD), a
-starting XI of 11, a bench of 4, at most 3 players from one club, and a budget of £100.0m.
+starting XI of 11, a bench of 4, at most 3 players from one club, and a budget of £100.0m. A
+number offered as an example or an option, such as a suggested horizon, is unsupported unless it
+meets these rules.
 
 This definition was written on 4 November 2026, after the first screening flags were read.
 `kimi-k3` gave 6.1 (a difference of expected points), 0.2 (a price rise) and 15 (the squad size).
