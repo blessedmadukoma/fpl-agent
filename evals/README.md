@@ -47,6 +47,13 @@ The recorded code commit had uncommitted changes; its exact source state was
 not archived. That limits exact reproduction but does not prevent reviewing
 the saved question, tool evidence and final answer.
 
+`pre-gw9-01`, `step18-after-full` and `step18b-t0-full` record dataset hash
+`75ffdb3e0c44a7f1f62502d233de207320fb83c67e4f56fcea7c9f3d37505348`. In those
+runs, case 18 (`league-goal-capability-limit`) named the private league. The
+current file replaces the name with "private mini-league" and keeps the
+expected facts unchanged. A new case 18 result uses a different input from
+those runs.
+
 Start with an automatic pass, an automatic failure and a refusal. Judge each
 against the request, checked reference facts and tool evidence. Automatic tool
 and argument scores do not establish final-answer correctness. Save manual
