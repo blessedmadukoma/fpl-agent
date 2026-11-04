@@ -219,7 +219,7 @@ def merge_reviews(
 
 
 def summarise_results(reviewed_records):
-    EXPECTED_METRICS = {
+    REQUIRED_METRICS = {
         "tool_selection", "argument_validity", "fact_recall",
         "groundedness", "task_success",
     }
@@ -234,8 +234,12 @@ def summarise_results(reviewed_records):
                 f"Missing scores for case ID {record.get('case_id')!r}"
             )
         scores = record["scores"]
-        if set(scores) != EXPECTED_METRICS:
-            raise ValueError("Each record needs all five scores")
+        missing = REQUIRED_METRICS - set(scores)
+        if missing:
+            raise ValueError(
+                f"Missing scores {sorted(missing)} for case ID "
+                f"{record.get('case_id')!r}"
+            )
 
         for name, value in scores.items():
             if value is None:
@@ -249,6 +253,9 @@ def summarise_results(reviewed_records):
                     f"{record.get('case_id')!r}"
                 )
             score = value["score"]
+            # An answer check scores None when it does not apply to the case.
+            if score is None:
+                continue
             if score not in (0, 1):
                 raise ValueError(
                     f"Score {name!r} for case ID "

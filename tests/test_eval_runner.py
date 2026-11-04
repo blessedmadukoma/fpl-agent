@@ -441,3 +441,40 @@ def test_save_results_does_not_overwrite_or_consume_generator(tmp_path):
         runner.save_results(forbidden_records(), destination)
 
     assert destination.read_text() == "original\n"
+
+
+REVIEWED_SCORES = {
+    name: {"score": 1} for name in (
+        "tool_selection", "argument_validity", "fact_recall",
+        "groundedness", "task_success",
+    )
+}
+
+
+def test_summary_counts_answer_checks_and_skips_checks_that_do_not_apply():
+    records = [
+        {"case_id": "one", "scores": {
+            **REVIEWED_SCORES, "numbers_validity": {"score": 0},
+            "teams_validity": {"score": None, "missing": []},
+        }},
+        {"case_id": "two", "scores": {
+            **REVIEWED_SCORES, "numbers_validity": {"score": 1},
+            "teams_validity": {"score": 1, "missing": []},
+        }},
+    ]
+
+    metrics = runner.summarise_results(records)["metrics"]
+
+    assert metrics["numbers_validity"] == {
+        "passed": 1, "total": 2, "pass_rate": 0.5}
+    assert metrics["teams_validity"] == {
+        "passed": 1, "total": 1, "pass_rate": 1.0}
+    assert metrics["task_success"]["total"] == 2
+
+
+def test_summary_rejects_a_record_without_a_reviewed_score():
+    scores = {name: value for name, value in REVIEWED_SCORES.items()
+              if name != "task_success"}
+
+    with pytest.raises(ValueError, match="task_success"):
+        runner.summarise_results([{"case_id": "one", "scores": scores}])
