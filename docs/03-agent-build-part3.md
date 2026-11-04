@@ -1,6 +1,6 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 10, 4 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 11, 4 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
@@ -30,6 +30,9 @@ in a separate file, and allow `undetermined` when the saved evidence cannot esta
 checks. Step 21 ships the web page in three releases: read-only pages, live questions for the
 owner, then a public "try your team ID" page with limits and protections (21.4). Login,
 visitors' own API keys, payments and a model choice per visitor are later work.
+
+**Changed in version 11:** define an unsupported number for rule 1 of Step 19. The definition
+was written after the first screening flags were read.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -685,6 +688,22 @@ numbers check. A check failure counts only after you have read it and confirmed 
 3. the lowest cost per case;
 4. the lower median latency.
 
+**Unsupported number (rule 1).** A number is supported only if it appears in a tool result of the
+same case or in the question, after the conversions the numbers check allows: tenths of £m, a share
+as a percentage, and rounding. A count of items that the tool result or the question lists is also
+supported, for example three buys, or four gameweeks for GW9 to GW12. A number that the model
+calculates from tool values is unsupported, even when it is correct, for example a difference of
+expected points or a price rise. The Python tools remain the source of every number. A fixed FPL
+rule is supported only as one of these values: a squad of 15 (2 GKP, 5 DEF, 5 MID, 3 FWD), a
+starting XI of 11, a bench of 4, at most 3 players from one club, and a budget of £100.0m.
+
+This definition was written on 4 November 2026, after the first screening flags were read.
+`kimi-k3` gave 6.1 (a difference of expected points), 0.2 (a price rise) and 15 (the squad size).
+`deepseek-v4.1-flash` and `glm-5.3` calculated the same difference of expected points. The list of
+FPL rules changes the result of `kimi-k3` runs r2 and r3. If no finalist passes rule 1, no model is
+chosen. The next controlled change is then to return the totals and differences from the tools,
+and to run the finals again.
+
 `gemma4:12b` is the baseline only. A public server cannot reach the laptop, so it cannot be
 chosen, even though it costs nothing. The rule chooses a model and its temperature together
 (19.1).
@@ -783,8 +802,10 @@ runs, add checks that need no person:
 
 Review the finalists' answers by hand for unsupported numbers, as the decision rule requires.
 
-In the README model table, state two limits. Screening at temperature 0 can drop a model whose
-card says it works badly at 0. Each price comes from Ollama's pricing page on a stated date.
+In the README model table, state three limits. Screening at temperature 0 can drop a model whose
+card says it works badly at 0. Each price comes from Ollama's pricing page on a stated date. The
+definition of an unsupported number was written after the first flags were read, and its list of
+FPL rules changes two `kimi-k3` results.
 
 **Update:** `README.md` with a model table beside the Step 18 table. Do not combine the two
 changes in one run.
