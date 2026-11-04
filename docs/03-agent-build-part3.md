@@ -1,6 +1,6 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 11, 4 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 12, 5 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
@@ -33,6 +33,9 @@ visitors' own API keys, payments and a model choice per visitor are later work.
 
 **Changed in version 11:** define an unsupported number for rule 1 of Step 19. The definition
 was written after the first screening flags were read.
+
+**Changed in version 12:** record the Step 19 outcome. No model met the rule; `glm-5.3:cloud` at
+temperature 0 is the provisional pilot model.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -814,6 +817,13 @@ changes in one run.
 
 **Checkpoint:** one model is chosen by the rule written before the runs, with its scores, cost and
 latency in the README.
+
+**Outcome, 5 November 2026:** the checkpoint is not met. No finalist passed rule 1 at either
+temperature: each one calculated at least one number itself. `glm-5.3:cloud` at temperature 0 is
+the provisional pilot model, a judgement outside the rule. It is the only finalist with no
+confirmed safety failure, and its only calculated number is now returned by the tool. Task success,
+cost and latency were not measured. Before the pilot, confirm the last tool change with one
+`glm-5.3:cloud` run at temperature 0. The results and limits are in the README (Step 19).
 
 ---
 

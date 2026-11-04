@@ -115,11 +115,14 @@ Other commands:
 
 ## Evaluation
 
-The agent is evaluated on 20 fixed cases (`evals/fpl-agent-v2.jsonl`) against an immutable snapshot. Each run writes three files to `data/evals/runs/`: the raw results, automatic scores (tool selection and argument validity) and a manifest that records the commit, model, prompt hash, dataset hash and temperature.
+The agent is evaluated on 20 fixed cases (`evals/fpl-agent-v2.jsonl`) against an immutable snapshot. Each run writes three files to `data/evals/runs/`: the raw results, automatic scores and a manifest that records the commit, model, prompt hash, dataset hash and temperature. The automatic scores cover tool selection, argument validity and three answer checks: every number traces to a tool result or the question, a recommended team lists all 11 starters and 4 bench players, and risky cases are refused or clarified safely. A check that does not apply to a case scores `None`.
 
 ```sh
 make eval-baseline EVAL_RUN=my-run-name
+fpl rescore --cases evals/fpl-agent-v2.jsonl --run-id my-run-name
 ```
+
+`fpl rescore` scores a saved run again with the current checks, without calling the model, and writes `{run}-rescored.jsonl`.
 
 `EVAL_DATASET`, `EVAL_SNAPSHOT`, `EVAL_OLLAMA_MODEL` and `EVAL_ENDPOINT` override the defaults. The runner refuses to overwrite an existing run name. Dataset details and rules are in [evals/README.md](evals/README.md).
 
@@ -220,3 +223,71 @@ _Full run (`step18b-t0-full`) against `step18-after-full`:_
 - `player-fpl-assists` called `get_historical_leaders` instead of `get_player_summary`, as in Step 17. At temperature 1 it chose the right tool once. It did not pass in either run (argument validity 0), so it does not count against the decision rule. It is a repeatable failure to fix next.
 
 _Decision:_ temperature 0. All three parts of the decision rule hold: cases 5, 16 and 17 were right in 10 of 10 runs; case 4 was right in 10 of 10 (3 of 5 at temperature 1); and no case that passed at temperature 1 failed at temperature 0. The automatic scores check tool choice and arguments only. Manual review: case 4's answer is correct; case 15's answer adds one unsupported claim.
+
+### Step 19: Choosing the pilot model
+
+_Written before the runs (Step 19 in [part 3](docs/03-agent-build-part3.md)):_
+
+- **Screening cut:** 20/20 completed, at least 19/20 for tool selection and no confirmed safety failure. Rank the rest by argument validity, then by the numbers check.
+- **Final rule, in order:** no unsupported numbers in the hand review; the highest task success; the lowest cost per case; the lower median latency.
+- **Candidates:** `gemma4:12b` (local baseline only), `gemma4:cloud`, `gpt-oss:120b-cloud`, `minimax-m3.1-flash:cloud`, `kimi-k3:cloud`, `deepseek-v4.1-flash:cloud` and `glm-5.3:cloud`. Every run uses the same snapshot and cases (dataset hash `22fca1ed…`).
+
+_Written after the first flags were read:_ the definition of an unsupported number for rule 1. A number the model calculates from tool values is unsupported even when it is correct. A count of listed items and a value from a fixed list of FPL rules (for example, a squad of 15) are supported. A number offered as an example is unsupported.
+
+_Change record, one change at a time:_
+
+| Change | Commit | Runs after it |
+| --- | --- | --- |
+| Answer checks: find the bench by its label, read names with Unicode spaces and hyphens, ignore rank numbers from the question | `0e10df0`, `ad8d765` | first screening re-scored |
+| Tools return the expected-points gap to the best player and each player's price change | `8cec6e4` | `step19b-kimi-k3-cloud-*` (6 runs) |
+| A rejected tool call goes back to the model once, with the reason | `3204fd4` | `step19c-*` (7 runs) |
+| Prompt v3: do not calculate new numbers | `98c7b59` | `step19d-*` (22 runs) |
+| `get_my_team` returns the gap between current and selling price | `f7f2ce3` | none |
+
+Before `3204fd4`, 17 of the 18 cases that did not complete stopped on one rejected tool argument, most often `get_historical_leaders` with `limit` above 20. The model never saw the reason.
+
+_Screening at temperature 0:_
+
+| Model | Completed: first → `19c` → `19d` | Tool selection | Argument validity | Numbers flags: `19c` → `19d` | Confirmed safety failures | Result |
+| --- | --- | --- | --- | --- | --- | --- |
+| `kimi-k3:cloud` | 20 → 20 → 20 | 20 | 19 | 1 → 0 | 0 | finalist |
+| `glm-5.3:cloud` | 18 → 20 → 20 | 20 | 18 | 0 → 0 | 0 | finalist |
+| `deepseek-v4.1-flash:cloud` | 19 → 20 → 20 | 20 | 18 | 2 → 1 | 0 | finalist |
+| `gpt-oss:120b-cloud` | 18 → 20 → 20 | 20 | 17 | 1 → 0 | 0 | reserve |
+| `gemma4:cloud` | 20 → 20 → 20 | 20 | 20 | 0 → 0 | 1 | out: compared "Fernandes" without asking which one |
+| `minimax-m3.1-flash:cloud` | 17 → 19 → 18 | 20 | 18 | 6 → 1 | 0 | out: 18/20 completed |
+| `gemma4:12b` | 20 → 20 → 20 | 19 | 17 | 1 → 1 | 0 | baseline only |
+
+Tool selection and argument validity are from the `step19d` runs. Every flag was read before it counted. False flags came from clarifications without a question mark, from "no" before a claim, and from a timestamp written to the second.
+
+_Finals (`step19d-*`, three runs at each temperature; temperature 0 run 1 is the screening run):_
+
+| Model, temperature | Completed | Tool selection | Argument validity | Rule 1: calculated numbers | Confirmed safety failures |
+| --- | --- | --- | --- | --- | --- |
+| `glm-5.3`, 0 | 20/20/20 | 20/20/20 | 18/18/18 | "£0.1m" in 3 of 3 runs | 0 |
+| `glm-5.3`, 1.0 | 20/20/20 | 20/20/20 | 19/18/17 | "£0.1m" in 2 of 3 runs | 0 |
+| `kimi-k3`, 0 | 20/20/20 | 20/20/20 | 19/18/18 | "£0.1m" in 3 of 3 runs | 1 |
+| `kimi-k3`, 1.0 | 20/20/20 | 20/20/20 | 18/18/18 | "£4.1m" (a price difference) | 2 |
+| `deepseek-v4.1-flash`, 0 | 20/20/20 | 20/20/20 | 18/18/19 | "25%", "1 in 4", "under 30%", "£6.7m", "72%" | 1 |
+| `deepseek-v4.1-flash`, 1.0 | 20/20/20 | 20/20/20 | 18/19/20 | "72%" (100 − 28.4) | 0 |
+
+"£0.1m" is the gap between Gvardiol's current price (£5.7m) and selling price (£5.6m), stated by the model. It is correct in every run, but the numbers check passed it only because an unrelated tool value matched; reading found it. Every confirmed safety failure is the same case: the model compared a "Fernandes" without asking which one.
+
+Temperature 1.0 is DeepSeek's recommended setting \[1\]. For GLM and Kimi it is the setting used for their published results, not a recommendation \[2\], \[3\]. The runs set only the temperature; top_p is the provider's default.
+
+_Decision:_ no model is chosen by the written rule, so the Step 19 checkpoint is not met. Every finalist has at least one calculated number at each temperature. The provisional pilot model is `glm-5.3:cloud` at temperature 0, a judgement outside the rule: it is the only finalist with no confirmed safety failure in any run, it completed 20/20 with the right tools in every run, and its only rule 1 failure is the "£0.1m" gap, which `f7f2ce3` now returns from the tool. Temperature 0 and 1.0 scored the same; temperature 0 is more repeatable (Step 18b).
+
+_Limits:_
+
+- `f7f2ce3` is not yet measured. Confirm it with one `glm-5.3:cloud` run at temperature 0 before the pilot.
+- Task success (rule 2), cost per case (rule 3) and latency (rule 4) were not measured.
+- The rule 1 definition was written after the first flags were read. Its list of FPL rules changed two results in kimi's first finals.
+- Screening at temperature 0 can drop a model whose card says it works badly at 0.
+- The flag review is AI-assisted. The answer checks are approximate, so every flag was read before it counted.
+- One `glm-5.3` run waited about 11 minutes for a cloud reply; the model client sets no request timeout.
+
+_References:_
+
+1. DeepSeek, "DeepSeek-V4.1-Flash," Hugging Face. [Online]. Available: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+2. Z.ai, "GLM-5.3," Hugging Face. [Online]. Available: https://huggingface.co/zai-org/GLM-5.3
+3. Moonshot AI, "Kimi-K3," Hugging Face. [Online]. Available: https://huggingface.co/moonshotai/Kimi-K3
