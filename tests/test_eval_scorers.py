@@ -307,3 +307,46 @@ def test_scoring_does_not_change_inputs_and_results_are_json_safe():
 
     assert case == original_case
     assert saved_result == original_result
+
+
+def numbers_record(answer, result, status="completed",
+                   question="Should I hold?"):
+    return {"input": question, "answer": answer,
+            "tool_calls": [{"status": status, "result": result}]}
+
+
+@pytest.mark.parametrize(("answer", "result", "unsupported"), [
+    ("It corresponds to 10.0.", {"actual_gws": [9, 10]}, ["10.0"]),
+    ("A gain of 3.78, about 4 points.", {"gain": 3.7819309398822725}, []),
+    ("£1.1m in the bank.", {"bank_in_tenths": 11}, []),
+    ("A 41% chance.", {"clean_sheet_chance": 0.4127}, []),
+    ("A 75% chance of playing.",
+     {"news": "Knee injury - 75% chance of playing"}, []),
+    ("GW9, GW9 and GW9.", {"target_gw": 9}, []),
+    ("Bench:\n1. Raya\n2. Saka", {}, []),
+    ("Taken on 28 October 2025.", {"as_of": "2026-10-28T21:26:50"}, ["2025"]),
+])
+def test_numbers_score_accepts_traced_numbers_and_flags_invented_ones(
+    answer, result, unsupported,
+):
+    assert scorers.score_numbers({}, numbers_record(answer, result)) == {
+        "score": 0 if unsupported else 1,
+        "unsupported": unsupported,
+    }
+
+
+def test_numbers_score_uses_the_question_and_skips_failed_calls():
+    record = numbers_record(
+        "Threshold 1000, gain 5.", {"gain": 5}, status="error",
+        question="Set the threshold to 1000.",
+    )
+
+    assert scorers.score_numbers({}, record) == {
+        "score": 0, "unsupported": ["5"],
+    }
+
+
+def test_numbers_score_does_not_apply_without_an_answer():
+    assert scorers.score_numbers({}, numbers_record(None, {})) == {
+        "score": None, "unsupported": [],
+    }

@@ -133,7 +133,7 @@ def test_eval_runs_once_and_saves_manifest_results_and_scores(
         assert record["run_id"] == "test-run"
         assert record["trace_id"] == f"trace-{record['case_id']}"
     assert all(set(record["scores"]) == {
-        "tool_selection", "argument_validity",
+        "tool_selection", "argument_validity", "numbers_validity",
     } for record in scored)
     assert raw[0]["status"] == "completed"
     assert scored[0]["scores"]["tool_selection"]["score"] == 1

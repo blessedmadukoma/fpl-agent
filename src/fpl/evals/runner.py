@@ -6,7 +6,11 @@ from pathlib import Path
 
 from fpl.agent.loop import agent_loop
 from fpl.config import Settings
-from fpl.evals.scorers import score_arguments, score_tool_selection
+from fpl.evals.scorers import (
+    score_arguments,
+    score_numbers,
+    score_tool_selection,
+)
 
 
 def load_cases(evals_json: Path) -> list[dict]:
@@ -118,6 +122,7 @@ def score_results(
         result_copy["scores"] = {
             "tool_selection": score_tool_selection(case, result),
             "argument_validity": score_arguments(case, result),
+            "numbers_validity": score_numbers(case, result),
         }
         output.append(result_copy)
 
