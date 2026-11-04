@@ -285,8 +285,6 @@ def test_tool_record_preserves_raw_arguments_and_json_result(runtime):
 @pytest.mark.parametrize("name,raw_arguments,parsed_arguments,error_type", [
     ("unknown_tool", "{}", None, ValueError),
     ("get_my_team", "{", None, json.JSONDecodeError),
-    ("get_my_team", '{"unexpected": 1}', {"unexpected": 1}, ValidationError),
-    ("get_my_team", "[]", [], ValidationError),
 ])
 def test_invalid_tool_request_is_recorded_before_error_is_raised(
     runtime, name, raw_arguments, parsed_arguments, error_type,
@@ -438,15 +436,60 @@ def test_unoffered_tool_is_rejected_before_execution(runtime):
     assert len(runtime.requests) == 1
 
 
-@pytest.mark.parametrize("arguments", ["{bad-json", "[]", '{"extra": true}'])
-def test_invalid_arguments_stop_before_tool_execution(runtime, arguments):
+def test_unreadable_arguments_stop_before_tool_execution(runtime):
     runtime.responses.append(assistant_message(
-        calls=[tool_call(arguments=arguments)]))
+        calls=[tool_call(arguments="{bad-json")]))
 
     with pytest.raises(ValueError):
         ask(runtime)
     assert runtime.executions == []
     assert len(runtime.requests) == 1
+
+
+@pytest.mark.parametrize(("arguments", "argument"), [
+    ('{"extra": true}', "extra"), ("[]", "arguments"),
+])
+def test_rejected_arguments_go_back_to_the_model_for_one_retry(
+    runtime, arguments, argument,
+):
+    records = []
+    runtime.responses.extend([
+        assistant_message(calls=[tool_call("rejected", arguments=arguments)]),
+        assistant_message(calls=[tool_call("retried")]),
+        assistant_message("You have £1.0m remaining."),
+    ])
+
+    answer = loop.agent_loop(
+        runtime.settings, "Read my FPL bank.", runtime.snapshot_dir,
+        tool_calls=records,
+    )
+
+    assert answer == "You have £1.0m remaining."
+    assert [record["status"] for record in records] == ["rejected", "completed"]
+    assert records[0]["error_type"] == "ValidationError"
+    assert len(runtime.executions) == 1
+    reply = next(message for message in runtime.requests[1]["messages"]
+                 if message.get("tool_call_id") == "rejected")
+    content = json.loads(reply["content"])
+    assert content["error"] == "invalid arguments"
+    assert [problem["argument"] for problem in content["problems"]] == [argument]
+
+
+def test_second_rejected_arguments_stop_the_case(runtime):
+    records = []
+    runtime.responses.extend([
+        assistant_message(calls=[tool_call("first", arguments='{"extra": 1}')]),
+        assistant_message(calls=[tool_call("second", arguments='{"extra": 2}')]),
+    ])
+
+    with pytest.raises(ValidationError):
+        loop.agent_loop(
+            runtime.settings, "Read my FPL bank.", runtime.snapshot_dir,
+            tool_calls=records,
+        )
+    assert [record["status"] for record in records] == ["rejected", "error"]
+    assert runtime.executions == []
+    assert len(runtime.requests) == 2
 
 
 def test_model_request_limit_is_four(runtime):

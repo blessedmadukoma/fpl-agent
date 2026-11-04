@@ -3,7 +3,7 @@ import logging
 import uuid
 from pathlib import Path
 
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from fpl.agent.model import message_client, model_request
 from fpl.agent.observability import (
@@ -18,10 +18,26 @@ from fpl.agent.observability import (
     sanitise_trace_data,
 )
 from fpl.agent.schemas import Horizon
-from fpl.agent.service import run_tool, tool_definitions
+from fpl.agent.service import TOOL_REGISTRY, run_tool, tool_definitions
 from fpl.config import Settings
 
 logger = logging.getLogger(__name__)
+
+MAX_REJECTED_CALLS = 1
+
+
+def rejection_message(error: ValidationError) -> str:
+    """Tell the model which arguments a tool rejected, so that it can call the tool again."""
+    problems = [
+        {"argument": ".".join(str(part) for part in detail["loc"]) or "arguments",
+         "problem": detail["msg"]}
+        for detail in error.errors()
+    ]
+    return json.dumps({
+        "error": "invalid arguments",
+        "problems": problems,
+        "next_step": "Correct the arguments and call the tool again.",
+    })
 
 
 def agent_loop(settings: Settings, user_prompt: str, snapshot_dir: Path,
@@ -103,6 +119,7 @@ def agent_loop(settings: Settings, user_prompt: str, snapshot_dir: Path,
                                  session_id=session_id, metadata=metadata, prompt=candidate,
                                  ):
                 max_model_calls = 4
+                rejected_calls = 0
                 for turn in range(max_model_calls):
                     response = model_request(
                         settings, lf_client=langfuse, messages=messages,
@@ -154,6 +171,21 @@ def agent_loop(settings: Settings, user_prompt: str, snapshot_dir: Path,
                                 # Explicit application settings outrank model guesses.
                                 arguments = {**arguments, "horizon": horizon}
                             record["arguments"] = arguments
+                            schema, _ = TOOL_REGISTRY[call.function.name]
+                            try:
+                                schema.model_validate(arguments)
+                            except ValidationError as exc:
+                                rejected_calls += 1
+                                if rejected_calls > MAX_REJECTED_CALLS:
+                                    raise
+                                record["status"] = "rejected"
+                                record["error_type"] = type(exc).__name__
+                                messages.append({
+                                    "role": "tool",
+                                    "tool_call_id": call.id,
+                                    "content": rejection_message(exc),
+                                })
+                                continue
                             with safe_observation(langfuse,
                                                   as_type="tool", name=f"tool-{call.function.name}",
                                                   ) as tool_span:
