@@ -73,3 +73,22 @@ def test_generation_keeps_tool_requests_without_leaking_private_arguments(tmp_pa
     assert "content" not in output
     assert output["tool_calls"][0]["function"]["arguments"] == '{"element_id": 109}'
     assert reply.tool_calls[0].function.arguments == '{"entry_id":1234567,"element_id":109}'
+
+
+def test_model_request_stops_waiting_after_the_timeout(tmp_path, monkeypatch, fake_langfuse):
+    settings = Settings(entry_id=None, data_dir=tmp_path, ollama_model="fixture-model")
+    reply = ChatCompletionMessage(role="assistant", content="Hello.")
+    api = MagicMock()
+    api.chat.completions.create.return_value = SimpleNamespace(
+        choices=[SimpleNamespace(message=reply)], usage=None)
+    client_options = {}
+
+    def client(**kwargs):
+        client_options.update(kwargs)
+        return api
+
+    monkeypatch.setattr(model, "OpenAI", client)
+
+    model.model_request(settings, fake_langfuse, [{"role": "user", "content": "Hi"}])
+
+    assert client_options["timeout"] == model.REQUEST_TIMEOUT_SECONDS == 120

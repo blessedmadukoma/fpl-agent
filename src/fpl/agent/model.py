@@ -18,6 +18,7 @@ from fpl.config import Settings
 
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompts" / \
     f"system-v{PROMPT_VERSION}.md"
+REQUEST_TIMEOUT_SECONDS = 120
 
 
 def load_prompt(prompt_path: Path):
@@ -39,7 +40,8 @@ def model_request(settings: Settings, lf_client: Langfuse | None, messages: list
                   tools: list[ChatCompletionToolUnionParam] | Omit = omit, private_values: tuple[str, ...] = ()):
     client = OpenAI(
         base_url=settings.ollama_base_url,
-        api_key=settings.ollama_api_key
+        api_key=settings.ollama_api_key,
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
 
     with safe_observation(lf_client, as_type="generation", name="ollama.request",
