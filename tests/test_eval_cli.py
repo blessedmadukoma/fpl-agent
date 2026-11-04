@@ -267,3 +267,49 @@ def test_make_recipe_uses_supported_flags_and_provider_environment():
         "--snapshot", "data/evals/snapshots/fixture-snapshot",
         "--run-id", "fixture-run",
     ]
+
+
+def test_rescore_scores_a_saved_run_without_model_calls(evaluation, capsys):
+    calls = [
+        ("get_my_team", {}, {"bank_in_tenths": 10}, "You have £1.0m."),
+        ("get_chip_values", {"horizon": 1, "model": "full"}, {},
+         "It adds 10.0 points."),
+    ]
+    records = [
+        {
+            "case_id": case["id"], "snapshot_id": case["snapshot_id"],
+            "input": case["input"], "answer": answer, "status": "completed",
+            "tool_calls": [{"name": name, "arguments": arguments,
+                            "status": "completed", "result": result}],
+        }
+        for case, (name, arguments, result, answer)
+        in zip(evaluation.cases, calls)
+    ]
+    runner.save_results(records, evaluation.root / "test-run.jsonl")
+
+    cli.main(["rescore", "--cases", str(evaluation.dataset),
+              "--run-id", "test-run"])
+
+    rescored = runner.load_cases(evaluation.root / "test-run-rescored.jsonl")
+    assert [record["scores"]["numbers_validity"]["score"]
+            for record in rescored] == [1, 0]
+    assert capsys.readouterr().out == "numbers_validity: chip\n"
+    assert evaluation.calls == []
+
+
+@pytest.mark.parametrize(("run_id", "message"), [
+    ("missing-run", "Run file not found"),
+    ("test-run", "Refusing to overwrite"),
+])
+def test_rescore_refuses_a_missing_run_or_existing_output(
+    evaluation, run_id, message,
+):
+    runner.save_results([], evaluation.root / "test-run.jsonl")
+    existing = evaluation.root / "test-run-rescored.jsonl"
+    existing.write_text("original\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit, match=message):
+        cli.main(["rescore", "--cases", str(evaluation.dataset),
+                  "--run-id", run_id])
+
+    assert existing.read_text(encoding="utf-8") == "original\n"

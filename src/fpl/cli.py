@@ -386,6 +386,51 @@ def cmd_eval(settings: Settings, args):
     print(f"Manifest:       {manifest_path}")
 
 
+@command(
+    "rescore",
+    "Score a saved evaluation run again, without calling the model",
+    arg("--cases", type=Path, required=True),
+    arg("--run-id", required=True),
+)
+def cmd_rescore(settings: Settings, args):
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", args.run_id):
+        raise SystemExit(
+            "Invalid run name: use only letters, numbers, hyphens and underscores.")
+
+    if not args.cases.exists():
+        raise SystemExit(f"Cases file not found: {args.cases}")
+
+    run_dir = settings.data_dir / "evals" / "runs"
+
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    raw_path = run_dir / f"{args.run_id}.jsonl"
+    if not raw_path.exists():
+        raise SystemExit(f"Run file not found: {raw_path}")
+
+    scored_path = run_dir / f"{args.run_id}-rescored.jsonl"
+
+    if scored_path.exists():
+        raise SystemExit(f"Refusing to overwrite existing file: {scored_path}")
+
+    cases = load_cases(args.cases)
+    records = load_cases(raw_path)
+    scored = score_results(cases, records)
+    save_results(scored, scored_path)
+
+    failed: dict[str, list[str]] = {}
+    for record in scored:
+        for check, value in record.get("scores", {}).items():
+            if value["score"] == 0:
+                failed.setdefault(check, []).append(record["case_id"])
+
+    if not failed:
+        print("All checks passed.")
+    else:
+        for check, case_ids in failed.items():
+            print(f"{check}: {', '.join(case_ids)}")
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
