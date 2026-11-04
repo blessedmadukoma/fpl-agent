@@ -21,6 +21,7 @@ class Settings:
     ollama_api_key: str = ""
     ollama_model: str = "gpt-oss:120b"
     ollama_base_url: str = "http://localhost:11434/v1/"
+    temperature: float = 0.0
 
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
@@ -56,6 +57,7 @@ def load_settings() -> Settings:
     ollama_api_key = os.getenv("OLLAMA_API_KEY", "")
     ollama_model = os.getenv("OLLAMA_MODEL", "")
     ollama_base_url = os.getenv("OLLAMA_BASE_URL", "")
+    temperature = os.getenv("TEMPERATURE", "").strip()
 
     langfuse_public_key = os.getenv("LANGFUSE_PUBLIC_KEY", "")
     langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY", "")
@@ -81,6 +83,7 @@ def load_settings() -> Settings:
         ollama_base_url=ollama_base_url,
         ollama_api_key=ollama_api_key,
         ollama_model=ollama_model,
+        temperature=float(temperature) if temperature else 0.0,
         langfuse_base_url=langfuse_base_url,
         langfuse_public_key=langfuse_public_key,
         langfuse_secret_key=langfuse_secret_key,

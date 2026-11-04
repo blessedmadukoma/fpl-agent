@@ -368,6 +368,7 @@ def cmd_eval(settings: Settings, args):
         "creation_time": datetime.now(timezone.utc).isoformat(),
         "model_endpoint": settings.ollama_base_url,
         "prompt_file": SYSTEM_PROMPT_PATH.name,
+        "temperature": settings.temperature
     })
 
     save_results([run_manifest], manifest_path)
