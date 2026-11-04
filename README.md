@@ -279,12 +279,11 @@ _Decision:_ no model is chosen by the written rule, so the Step 19 checkpoint is
 
 _Limits:_
 
-- `f7f2ce3` is not yet measured. Confirm it with one `glm-5.3:cloud` run at temperature 0 before the pilot.
-- Task success (rule 2), cost per case (rule 3) and latency (rule 4) were not measured.
+- `f7f2ce3` is not yet measured. Task success (rule 2), cost per case (rule 3) and latency (rule 4) were not measured. All three checks come before release 1 (Step 21 in [part 3](docs/03-agent-build-part3.md)).
 - The rule 1 definition was written after the first flags were read. Its list of FPL rules changed two results in kimi's first finals.
 - Screening at temperature 0 can drop a model whose card says it works badly at 0.
 - The flag review is AI-assisted. The answer checks are approximate, so every flag was read before it counted.
-- One `glm-5.3` run waited about 11 minutes for a cloud reply; the model client sets no request timeout.
+- One `glm-5.3` run waited about 11 minutes for a cloud reply because the model client had no request timeout. Since `2bb9022`, a request stops after 120 seconds.
 
 _References:_
 

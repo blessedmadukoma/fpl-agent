@@ -1,6 +1,6 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 12, 5 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 13, 5 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
@@ -36,6 +36,9 @@ was written after the first screening flags were read.
 
 **Changed in version 12:** record the Step 19 outcome. No model met the rule; `glm-5.3:cloud` at
 temperature 0 is the provisional pilot model.
+
+**Changed in version 13:** the open Step 19 checks (a run for the last tool change, task success,
+cost and latency) move to before release 1 of Step 21.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -822,8 +825,8 @@ latency in the README.
 temperature: each one calculated at least one number itself. `glm-5.3:cloud` at temperature 0 is
 the provisional pilot model, a judgement outside the rule. It is the only finalist with no
 confirmed safety failure, and its only calculated number is now returned by the tool. Task success,
-cost and latency were not measured. Before the pilot, confirm the last tool change with one
-`glm-5.3:cloud` run at temperature 0. The results and limits are in the README (Step 19).
+cost and latency were not measured, and the last tool change has no run yet. These checks come
+before release 1 (Step 21). The results and limits are in the README (Step 19).
 
 ---
 
@@ -895,6 +898,17 @@ optional in Step 23; it is not required to start the pilot.
 
 Run manifests written before the history rewrite of 4 November 2026 name the old commit IDs.
 Keep a small map from old to new IDs in the repository and show the new IDs on the Evals page.
+
+**Before R1:** finish the open Step 19 checks, so the Evals page shows a complete result:
+
+1. Run `glm-5.3:cloud` once at temperature 0 to measure `f7f2ce3`. The answer to
+   `owned-player-price-units` must quote the tool's gap between current and selling price
+   instead of calculating it.
+2. Review task success for the six `glm-5.3:cloud` finals runs (Step 19, rule 2).
+3. Take the cost per case and the median latency of those runs from the Langfuse traces
+   (rules 3 and 4). The session ID is the run ID.
+
+Add the results to the Step 19 section of the README.
 
 ### 21.1 One service for the CLI and web page
 
@@ -1024,8 +1038,8 @@ Protections:
 
 **Checkpoints:**
 
-- **R1:** from another device, the Evals, History and Answer pages load over HTTPS, and the
-  server has no model credentials.
+- **R1:** the Step 19 checks above are in the README. From another device, the Evals, History
+  and Answer pages load over HTTPS, and the server has no model credentials.
 - **R2:** from a phone, the owner asks three questions; each answer keeps its trace ID.
 - **R3:** from another device, confirm a team ID, ask three questions and send feedback. A sixth
   question on the same day gets the limit message. The service works while the laptop is
