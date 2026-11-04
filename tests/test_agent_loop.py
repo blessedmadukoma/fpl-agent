@@ -587,7 +587,7 @@ def test_complete_trace_links_matching_prompt_and_filters_only_recorded_data(run
     assert metadata["snapshot_id"] == runtime.manifest["snapshot_id"]
     assert metadata["db_hash"] == "fixture-database-hash"
     assert metadata["prompt_name"] == "fpl-system"
-    assert metadata["prompt_version"] == "2"
+    assert metadata["prompt_version"] == "3"
     assert str(uuid.UUID(root.attributes["session_id"])) == metadata["session_id"]
     for generation in (observations[1], observations[3]):
         assert generation.attributes["prompt"] is runtime.langfuse.prompt

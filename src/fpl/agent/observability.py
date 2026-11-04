@@ -14,7 +14,7 @@ from fpl.evals.snapshot_files import git_metadata, read_manifest
 
 logger = logging.getLogger(__name__)
 PROMPT_NAME = "fpl-system"
-PROMPT_VERSION = 2
+PROMPT_VERSION = 3
 FILTERED = "[filtered: unexpected tracing data]"
 
 

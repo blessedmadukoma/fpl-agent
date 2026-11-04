@@ -168,7 +168,7 @@ def test_matching_prompt_returns_the_reference_object(fake_langfuse):
     candidate = observability.get_matching_prompt(fake_langfuse, " Local system prompt\n")
     assert candidate is fake_langfuse.prompt
     assert fake_langfuse.prompt_calls == [{
-        "name": "fpl-system", "version": 2, "type": "text",
+        "name": "fpl-system", "version": 3, "type": "text",
         "max_retries": 0, "fetch_timeout_seconds": 2,
     }]
 
