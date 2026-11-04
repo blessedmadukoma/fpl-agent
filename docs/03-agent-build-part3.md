@@ -1,6 +1,6 @@
 # FPL Agent — Build, Part 3: frozen data, an LLM layer, traces and evals
 
-Version 9, 3 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
+Version 10, 4 November 2026. This guide starts at Step 13, immediately after Part 2. It adds a
 read-only conversational agent around the existing FPL calculations. It then adds tracing, a
 fixed evaluation set, a pilot with real users, the early-season backtest and the news extractor.
 
@@ -25,6 +25,11 @@ Keep each checkpoint's outcome even if the target is reached at a later date.
 
 **Changed in version 9:** complete the GW9 failure classification, keep each run's review
 in a separate file, and allow `undetermined` when the saved evidence cannot establish a cause.
+
+**Changed in version 10:** Step 19 tests the temperature in a second stage and adds answer
+checks. Step 21 ships the web page in three releases: read-only pages, live questions for the
+owner, then a public "try your team ID" page with limits and protections (21.4). Login,
+visitors' own API keys, payments and a model choice per visitor are later work.
 
 **Changed in version 5:** add a separate learning-first route and a user-wide, cross-agent
 Socratic mentor skill. Keep the delivery steps and their order. Do not restart implemented work
@@ -57,7 +62,7 @@ A later user interface must call the same agent service as the CLI. Do not put F
 | 18   | one controlled prompt or tool change      | a before/after table from the same evaluation set    |
 | 19   | the pilot model, chosen by the same cases | a model table with scores, cost and latency          |
 | 20   | each user's team from live snapshots      | `fpl ask --entry <id>` works for any public entry    |
-| 21   | a server and a small web page              | a test link and scheduled updates, without Telegram  |
+| 21   | a server and the web page, in three releases | read-only pages, then owner questions, then public team IDs with limits |
 | 22   | the pilot with real users, GW10–GW14        | a write-up with numbers from real traces             |
 | 23   | an optional Telegram interface            | another client over the tested service               |
 | 24   | the early-season backtest                 | a GW5–19 test with previous-season priors            |
@@ -669,7 +674,7 @@ two or three models:
 
 Write the decision rule before the runs. Suggested rule: choose the cheapest model with no
 unsupported numbers in the manual groundedness review and the highest task success; a tie goes to
-the lower median latency.
+the lower median latency. The rule chooses a model and its temperature together (19.1).
 
 Record for each model:
 
@@ -684,6 +689,53 @@ includes USD 60 of usage a month and 3 concurrent requests. Requests above the l
 and are rejected when the queue is full \[8\]. Check the page again before the
 pilot.
 
+### 19.1 Temperature, candidates and answer checks
+
+Step 18b set temperature 0 for `gemma4:12b`. Another model's card can recommend a different
+value, and some models answer worse at 0. Test in two stages, so that each stage changes one
+thing:
+
+1. **Screening:** run every candidate once at temperature 0. The model is the only change.
+2. **Finalists:** take the best two or three. Run each three times at temperature 0 and three
+   times at the temperature its model card recommends. Above 0 the output varies, so one run
+   is not enough.
+
+Put the temperature in the run name, for example `step19-kimi-k3-cloud-t06-r2` for 0.6. Run
+names cannot contain dots. The manifest records the model and the temperature; `TEMPERATURE`
+set on the command line overrides `.env`.
+
+Candidates on 4 November 2026: `gemma4:12b` (local baseline), `gpt-oss:120b` on Ollama Cloud,
+`minimax-m3.1-flash:cloud`, `kimi-k3:cloud`, `deepseek-v4.1-flash:cloud` and `glm-5.3:cloud`.
+A public server cannot reach a model on the laptop, so the pilot needs a cloud model. Leave out
+`gemma4:e4b`: it is smaller than the baseline, which fails 3 of 20 cases, and it runs only
+locally. Check each cloud tag in Ollama's cloud model list before the runs; a tag without the
+cloud suffix can download the full local model.
+
+```bash
+for m in gemma4:12b gpt-oss:120b-cloud minimax-m3.1-flash:cloud kimi-k3:cloud \
+         deepseek-v4.1-flash:cloud glm-5.3:cloud; do
+  run="step19-$(printf '%s' "$m" | tr ':.' '--')-t0-r1"
+  TEMPERATURE=0 make eval-baseline EVAL_OLLAMA_MODEL="$m" EVAL_RUN="$run"
+done
+```
+
+All Step 19 runs use the dataset after the case 18 wording change, so compare them with each
+other. The Step 18 runs used the earlier dataset hash.
+
+The manifest does not record latency or tokens. Take them from the Langfuse traces of each run;
+the session ID is the run ID.
+
+**Answer checks.** The scorer checks tools and arguments only. In `step18b-t0-full`, the transfer
+answer named Haaland as captain but listed 10 starters, and the case passed. Before the screening
+runs, add checks that need no person:
+
+- every number in the answer appears in a tool result of the same case, after unit conversion
+  (for example, tenths of £m);
+- a recommendation answer names 11 starters and 4 bench players;
+- a refusal case does not claim an action or a live value.
+
+Review the finalists' answers by hand for unsupported numbers, as the decision rule requires.
+
 **Update:** `README.md` with a model table beside the Step 18 table. Do not combine the two
 changes in one run.
 
@@ -693,6 +745,9 @@ latency in the README.
 ---
 
 ## Step 20 — serve each user's own team from live snapshots
+
+This step is the back end of release 3 in Step 21: any visitor can try the agent with their own
+public team ID.
 
 Today every tool reads one frozen snapshot that holds one team, the one in `FPL_ENTRY_ID`. Real
 users need two things kept apart:
@@ -741,8 +796,22 @@ snapshot, and the trace names both.
 
 ## Step 21 — deploy the server and a small web interface
 
-Deploy after Step 20. Give the first testers a browser link. Telegram is optional in Step 23;
-it is not required to start the pilot.
+Ship the web page in three releases. Each release has its own checkpoint at the end of this
+step. The screen designs are in Figma, in three sections that match these releases.
+
+| Release | Needs | Pages | Who can ask |
+|---|---|---|---|
+| R1, read-only | the run files and the answer record (21.3) | Evals, History, Answer | nobody; no model on the server |
+| R2, owner questions | Step 19 | Ask | the owner, behind a passcode |
+| R3, public team ID | Step 20 and 21.4 | Ask with a team ID box | any visitor, within the 21.4 limits |
+
+Ship R1 first: it needs no model and no new FPL code. History lists recorded answers: evaluation
+runs in R1, live questions from R2. Login, visitors' own API keys, payments and a model choice
+per visitor are not part of Step 21. Add them only if the pilot shows a need. Telegram is
+optional in Step 23; it is not required to start the pilot.
+
+Run manifests written before the history rewrite of 4 November 2026 name the old commit IDs.
+Keep a small map from old to new IDs in the repository and show the new IDs on the Evals page.
 
 ### 21.1 One service for the CLI and web page
 
@@ -766,12 +835,14 @@ Keep the page small:
 - provide 👍 and 👎 buttons, with an optional note;
 - provide a way to remove the participant's link, stored questions and traces.
 
-Use invitation-based access for the first cohort. Never ask for an FPL e-mail address or password.
+R3 is open to the public within the limits in 21.4; invited pilot testers get the higher daily
+cap. Never ask for an FPL e-mail address or password.
 Keep model and Langfuse credentials on the server. Store feedback through the service, linked to
 the answer's trace ID as a Langfuse score \[11\].
 
-Allow one question at a time per participant and set a daily cap, for example 20. On a timeout or
-full queue, return a busy/error message and record the failure. Do not invent an answer.
+Apply the limits in 21.4. On a timeout or a full queue, return a busy or error message and
+record the failure. Do not invent an answer. Do not count a failed question against the
+visitor's limit.
 
 ### 21.2 Deployment and scheduled updates
 
@@ -828,9 +899,55 @@ the participant's stored records and traces, without deleting shared FPL snapsho
 Add log rotation, disk monitoring and an alert for failed updates or a stopped service. Do not
 expose database ports or an unrestricted agent endpoint.
 
-**Checkpoint:** from another device, use the test link to confirm an entry, ask three questions
-and send feedback. The service works while the laptop is closed, updates create new snapshots,
-and the question records retain their trace IDs. Telegram is not involved.
+### 21.4 Limits and protections (R3)
+
+Starting limits. Review them after one week of real use:
+
+| Limit | Value |
+|---|---|
+| Free questions per visitor | 5 a day, reset at 00:00 UTC |
+| Invited pilot testers | 20 a day |
+| New team IDs per visitor | 3 a day |
+| Questions running per visitor | 1 |
+| Question length | 500 characters |
+| Time per question | 60 seconds, at most 4 model calls |
+| All visitors together | a daily cap set from the model budget |
+
+Count a visitor by browser session and by IP address, and apply whichever limit is reached
+first. Store the IP address only as a salted hash and delete it after 24 hours.
+
+Rough cost on 4 November 2026: the system prompt has 3,144 characters and the largest tool
+result in `step18b-t0-full` has 6,263, so one question uses about 5,000–10,000 input tokens. At
+the 12 October `gemma4` price \[8\] that is about USD 0.002 a question. Concurrent requests and
+the CPU needed to load new teams limit the service before money does. Replace this estimate
+with the Step 19 token counts.
+
+Protections:
+
+- **Bots and spam:** Cloudflare Turnstile on the Ask form \[19\]; a per-IP rate limit in the
+  reverse proxy; the daily cap for all visitors; a setting that turns Ask off; a budget alert
+  at the model provider.
+- **Text written by others:** FPL managers choose their team names, and those names reach the
+  model in tool results. Keep every tool read-only. Do not expose `fpl sql`, a web search tool
+  or any write action through the service.
+- **Rendering:** render answers as Markdown with raw HTML disabled, keep Jinja autoescape on and
+  send a Content-Security-Policy header \[20\]. Use a CSRF token on every POST.
+- **Input:** accept a team ID only as a positive integer, check it with FPL before loading the
+  team, and reject questions over 500 characters.
+- **Privacy:** ask only for the team ID. Show each visitor only their own History, bound to
+  their session. Ask for consent before the first question and provide "Delete my data" (21.1).
+  Keep model and Langfuse keys on the server.
+- **Terms:** FPL's API is unofficial. Read FPL's terms before any paid version.
+
+**Checkpoints:**
+
+- **R1:** from another device, the Evals, History and Answer pages load over HTTPS, and the
+  server has no model credentials.
+- **R2:** from a phone, the owner asks three questions; each answer keeps its trace ID.
+- **R3:** from another device, confirm a team ID, ask three questions and send feedback. A sixth
+  question on the same day gets the limit message. The service works while the laptop is
+  closed, updates create new snapshots, and the question records retain their trace IDs.
+  Telegram is not involved.
 
 ---
 
@@ -1112,3 +1229,6 @@ Treat each item as a separate measured change. Do not combine it with a prompt e
     30 October 2026. Run `pre-gw9-01`.
 18. FPL Agent, [GW9 failure classification](../manual-eval-pre-gw9-01.md),
     3 November 2026. Run `pre-gw9-01`.
+19. Cloudflare, “Turnstile.” [Online]. Available: https://developers.cloudflare.com/turnstile/
+20. OWASP, “Cross Site Scripting Prevention Cheat Sheet.” [Online]. Available:
+    https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
