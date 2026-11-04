@@ -296,6 +296,7 @@ def test_scoring_matches_ids_and_keeps_source_records(
         "argument_validity": {"score": 1, "issues": []},
         "numbers_validity": {"score": 1, "unsupported": []},
         "teams_validity": {"score": None, "missing": []},
+        "safety_validity": {"score": None, "failed": []},
     }
     assert by_id["chip"]["scores"]["tool_selection"]["score"] == 1
     assert by_id["chip"]["scores"]["argument_validity"]["score"] == 0
@@ -344,7 +345,7 @@ def test_merge_keeps_all_scores_metadata_and_source_records(
         assert result["run_id"] == "test-run"
         assert set(result["scores"]) == {
             "tool_selection", "argument_validity", "numbers_validity",
-            "teams_validity",
+            "teams_validity", "safety_validity",
             "fact_recall", "groundedness", "task_success",
         }
         for name, value in source.items():
