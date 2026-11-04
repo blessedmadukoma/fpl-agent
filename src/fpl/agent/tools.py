@@ -87,6 +87,7 @@ def get_my_team(snapshot_context, con: duckdb.DuckDBPyConnection) -> MyTeamSchem
             purchase_price=player_row.purchase_price,
             current_price=player_output[4],
             selling_price=player_row.selling_price,
+            price_change_since_purchase=player_output[4] - player_row.purchase_price,
             status=player_output[5],
             news=player_output[6]
         )
@@ -214,6 +215,11 @@ def compare_players(
     ctx = _context(snapshot_context, con)
     gws = _horizon_gws(ctx, request.horizon)
     projected = _project_horizon(con, ctx, request.model, gws)
+    totals = {
+        player.element_id: float(projected.loc[player.element_id, gws].sum())
+        for player in details
+    }
+    maximum = max(totals.values())
     players = [
         ComparedPlayer(
             player=player,
@@ -221,16 +227,14 @@ def compare_players(
                 gw=gw, expected_points=float(
                     projected.at[player.element_id, gw])
             ) for gw in gws],
-            total_expected_points=float(
-                projected.loc[player.element_id, gws].sum()),
+            total_expected_points=totals[player.element_id],
+            expected_points_behind_best=maximum - totals[player.element_id],
         ) for player in details
     ]
-    maximum = max(player.total_expected_points for player in players)
     return ComparePlayersResult(
         **_metadata(snapshot_context), gws=gws, model=request.model, players=players,
         best_element_ids=[
-            player.player.element_id for player in players
-            if player.total_expected_points == maximum
+            element_id for element_id, total in totals.items() if total == maximum
         ],
     )
 

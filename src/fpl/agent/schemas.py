@@ -14,6 +14,7 @@ class SquadPlayerSchema(BaseModel):
     purchase_price: int
     current_price: int
     selling_price: int
+    price_change_since_purchase: int
     status: str
     news: str | None = None
 
@@ -147,6 +148,7 @@ class ComparedPlayer(BaseModel):
     player: PlayerDetails
     projections: list[PlayerProjection]
     total_expected_points: float
+    expected_points_behind_best: float
 
 
 class ComparePlayersResult(SnapshotMetadata):

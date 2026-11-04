@@ -47,6 +47,7 @@ def frozen_team(tmp_path, monkeypatch):
             "purchase_price": 50,
             "current_price": 52,
             "selling_price": 51,
+            "price_change_since_purchase": 2,
             "status": "d" if element == 15 else "a",
             "news": "Fitness test" if element == 15 else None,
         }
@@ -310,6 +311,8 @@ def test_comparison_preserves_requested_order_and_counts_double_and_blank_gws(fr
     assert [gw.expected_points for gw in result.players[0].projections] == [
         2, 4, 0, 2]
     assert result.players[1].total_expected_points == 24
+    assert [player.expected_points_behind_best for player in result.players] == [
+        16, 0]
     assert result.best_element_ids == [14]
 
 
