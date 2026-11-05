@@ -279,16 +279,35 @@ _Decision:_ no model is chosen by the written rule, so the Step 19 checkpoint is
 
 _Confirmation run (`step19e-glm-5-3-cloud-t0-r1`, commit `6d6831b`):_ `f7f2ce3` is confirmed. In `owned-player-price-units`, the "£0.1m" gap now comes from the tool's `selling_price_below_current`, and the numbers check passes. The run completed 20/20 with tool selection 20/20 and argument validity 19/20. It also had one confirmed safety failure: the model chose B. Fernandes and compared him with Haaland before asking which Fernandes was meant. `glm-5.3:cloud` at temperature 0 now has 1 confirmed safety failure in 4 runs, and none in 3 runs at temperature 1.0.
 
+_Task success, cost and latency of the `glm-5.3` finals (rules 2 to 4):_
+
+Task success is a hand review of each answer against its case: every requested part answered with the reference facts, or the refusal or clarification the case requires. An explicit retrieval instruction in the question is part of the request, as in the `post-gw6-01` review. This criterion was set after the automatic scores were read and before the answers were read.
+
+| Temperature | Task success: r1/r2/r3 | Median latency per case (r1, r2, r3) | Input tokens per case | Output tokens per case | Cost per case |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 18/19/19 (56/60) | 5.2 s (4.1, 6.7, 5.1) | 4,499 | 761 | USD 0.0096 |
+| 1.0 | 19/18/18 (55/60) | 6.1 s (5.7, 6.4, 5.6) | 4,414 | 736 | USD 0.0094 |
+
+- Every task failure is case 10 (`player-fpl-assists`) or case 11 (`projection-is-not-observed-points`). Both questions ask for one finished gameweek; the failed runs passed `history_gws` of 2, 8 or 10. The requested facts were right in all 120 answers, so on the answer alone every run scores 20/20.
+- Case 11 failed in 3 of 3 runs at temperature 0 and 2 of 3 at 1.0. Case 10 failed in 1 of 3 at 0 and 3 of 3 at 1.0.
+- One passing answer adds a wrong FPL claim: case 8 in `step19d-glm-5-3-cloud-t0-r3` says only status "u" or "n" means a player will miss.
+- Tokens are the sum of each case's `ollama.request` generations. Latency is the duration of the case's `fpl-ask` span, so it includes tool time. Both come from the Langfuse traces; the session ID is the run ID.
+- Cost uses Ollama's `glm-5.3` price of USD 1.40 input and 4.40 output per million tokens, read on 5 November 2026 \[4\]. Langfuse has no price for this model. Cached input costs USD 0.26, but the traces do not record cached tokens, so each cost is an upper bound.
+- The trace of case 1 in `step19d-glm-5-3-cloud-t1-r2` is not in Langfuse, so the temperature 1.0 latency, token and cost figures use 59 cases.
+
+Rules 2 to 4 were measured for `glm-5.3` only, so they do not rank the finalists. Between its two temperatures, 0 has one more task success in 60 cases and a 0.9 s lower median latency; 1.0 costs USD 0.0002 less per case. These support the provisional choice of temperature 0 but do not change the rule 1 result.
+
 _Limits:_
 
-- Task success (rule 2), cost per case (rule 3) and latency (rule 4) were not measured. These checks come before release 1 (Step 21 in [part 3](docs/03-agent-build-part3.md)).
+- Task success (rule 2), cost per case (rule 3) and latency (rule 4) were measured for `glm-5.3` only.
 - The rule 1 definition was written after the first flags were read. Its list of FPL rules changed two results in kimi's first finals.
 - Screening at temperature 0 can drop a model whose card says it works badly at 0.
-- The flag review is AI-assisted. The answer checks are approximate, so every flag was read before it counted.
-- One `glm-5.3` run waited about 11 minutes for a cloud reply because the model client had no request timeout. Since `2bb9022`, a request stops after 120 seconds.
+- The flag review and the task success review are AI-assisted. The answer checks are approximate, so every flag was read before it counted.
+- One `glm-5.3` request waited 605 seconds for a cloud reply (case 19 in `step19d-glm-5-3-cloud-t0-r3`) because the model client had no request timeout. Since `2bb9022`, a request stops after 120 seconds.
 
 _References:_
 
 1. DeepSeek, "DeepSeek-V4.1-Flash," Hugging Face. [Online]. Available: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
 2. Z.ai, "GLM-5.3," Hugging Face. [Online]. Available: https://huggingface.co/zai-org/GLM-5.3
 3. Moonshot AI, "Kimi-K3," Hugging Face. [Online]. Available: https://huggingface.co/moonshotai/Kimi-K3
+4. Ollama, "Pricing." Accessed: 5 Nov. 2026. [Online]. Available: https://ollama.com/pricing

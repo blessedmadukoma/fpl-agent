@@ -906,8 +906,10 @@ Keep a small map from old to new IDs in the repository and show the new IDs on t
    instead of calculating it. **Done, 5 November 2026:** `step19e-glm-5-3-cloud-t0-r1` passed.
    The same run had one confirmed safety failure (see the README, Step 19).
 2. Review task success for the six `glm-5.3:cloud` finals runs (Step 19, rule 2).
+   **Done, 5 November 2026:** 56/60 at temperature 0 and 55/60 at 1.0.
 3. Take the cost per case and the median latency of those runs from the Langfuse traces
-   (rules 3 and 4). The session ID is the run ID.
+   (rules 3 and 4). The session ID is the run ID. **Done, 5 November 2026:** at temperature 0,
+   USD 0.0096 per case and a median of 5.2 s (see the README, Step 19).
 
 Add the results to the Step 19 section of the README.
 
