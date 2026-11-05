@@ -824,9 +824,11 @@ latency in the README.
 **Outcome, 5 November 2026:** the checkpoint is not met. No finalist passed rule 1 at either
 temperature: each one calculated at least one number itself. `glm-5.3:cloud` at temperature 0 is
 the provisional pilot model, a judgement outside the rule. It is the only finalist with no
-confirmed safety failure, and its only calculated number is now returned by the tool. Task success,
-cost and latency were not measured, and the last tool change has no run yet. These checks come
-before release 1 (Step 21). The results and limits are in the README (Step 19).
+confirmed safety failure in any finals run, and its only calculated number is now returned by the
+tool; the run that confirmed this, `step19e-glm-5-3-cloud-t0-r1`, had one confirmed safety failure.
+Its task success is 56/60 at temperature 0 and 55/60 at 1.0. At temperature 0 it costs USD 0.0096
+per case, with a median latency of 5.2 s. These were measured for `glm-5.3` only, so they do not
+rank the finalists. The results and limits are in the README (Step 19).
 
 ---
 
