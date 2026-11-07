@@ -9,7 +9,7 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from fpl.config import PROJECT_ROOT
-from fpl.evals.runner import load_cases
+from fpl.evals.records import load_cases
 
 EXPORT_DIR = PROJECT_ROOT / "exports" / "evals"
 
