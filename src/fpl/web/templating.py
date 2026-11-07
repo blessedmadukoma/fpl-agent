@@ -1,5 +1,3 @@
-"""Jinja templates for the web pages, with a Markdown filter for model answers."""
-
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates

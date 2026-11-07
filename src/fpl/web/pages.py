@@ -1,5 +1,3 @@
-"""Data each Release 1 page receives: the routes fill these and the templates render them."""
-
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
