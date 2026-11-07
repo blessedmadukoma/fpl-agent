@@ -21,6 +21,9 @@ from fpl.web.pages import (
 from fpl.web.templating import STATIC_DIR, templates
 
 CSP = "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+HSTS = "max-age=31536000; includeSubDomains"
+# FastAPI routes answer HEAD only when asked to; uptime monitors send it.
+READ_METHODS = ["GET", "HEAD"]
 
 EXPORTS = [RunExport.model_validate_json(path.read_text(
     encoding="utf-8")) for path in EXPORT_DIR.glob("*.json")]
@@ -44,9 +47,10 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.middleware("http")
-async def add_csp(request: Request, call_next):
+async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["Content-Security-Policy"] = CSP
+    response.headers["Strict-Transport-Security"] = HSTS
     return response
 
 
@@ -58,17 +62,17 @@ def shell(active: str) -> Shell:
                  pilot_model=run.model, pilot_temperature=run.temperature)
 
 
-@app.get("/")
+@app.api_route("/", methods=READ_METHODS)
 def home():
     return RedirectResponse("/evals")
 
 
-@app.get("/healthz", response_class=PlainTextResponse)
+@app.api_route("/healthz", methods=READ_METHODS, response_class=PlainTextResponse)
 def healthz():
     return "ok"
 
 
-@app.get("/answers/{run_id}/{case_id}")
+@app.api_route("/answers/{run_id}/{case_id}", methods=READ_METHODS)
 def answer(request: Request, run_id: str, case_id: str):
     if (run_id, case_id) not in CASES:
         raise HTTPException(status_code=404)
@@ -77,7 +81,7 @@ def answer(request: Request, run_id: str, case_id: str):
     return templates.TemplateResponse(request, "answer.html", {"page": page})
 
 
-@app.get("/history")
+@app.api_route("/history", methods=READ_METHODS)
 def history(request: Request, q: str = "", run: str = "", status: str = "", tool: str = "", page: int = 1):
     rows = []
     for case_run, case in CASES.values():
@@ -154,7 +158,7 @@ def run_row(run_id: str, exports: list[RunExport]) -> RunRow:
     )
 
 
-@app.get("/evals")
+@app.api_route("/evals", methods=READ_METHODS)
 def evals(request: Request):
     exports_by_group = {}
     for export in sorted(EXPORTS, key=lambda export: export.run.created_at):
