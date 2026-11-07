@@ -1,0 +1,374 @@
+{
+ "run": {
+  "run_id": "step19-smoke-gemma4-cloud",
+  "group": "step19-smoke-gemma4-cloud",
+  "created_at": "2026-11-04T19:32:24.465496Z",
+  "model": "gemma4:cloud",
+  "temperature": 0.0,
+  "dataset_file": "step18-horizon-4.jsonl",
+  "dataset_hash": "ccf7e7437bbf127b2d6745c7b298ced9a72e8406bf4ad674ac0df40707cbbd8f",
+  "snapshot_id": "20261028_212650_step17-current_3a1d9408-dirty",
+  "season": "2026-27",
+  "target_gw": 9,
+  "prompt_file": "system-v2.md",
+  "commit": "1bda7fb",
+  "commit_dirty": false,
+  "price": {
+   "input": 0.14,
+   "output": 0.4,
+   "read_on": "2026-11-05"
+  }
+ },
+ "cases": [
+  {
+   "case_id": "fixture-outlook",
+   "question": "Arsenal has team ID 1. Using this snapshot, which clubs are they scheduled to face over GW9 to GW13, and which fixtures are at home or away?",
+   "answer": "Based on the snapshot for target GW9, Arsenal's fixtures from GW9 to GW13 are as follows:\n\n*   **GW9:** Liverpool (Away)\n*   **GW10:** Hull City (Home)\n*   **GW11:** Newcastle (Away)\n*   **GW12:** Man City (Home)\n*   **GW13:** Brentford (Away)",
+   "status": "completed",
+   "error_type": null,
+   "trace_id": "6141e154b9ea62b39dd4f8f9214571b1",
+   "started_at": "2026-11-04T19:32:24.508000Z",
+   "latency_s": 3.416,
+   "model_calls": 2,
+   "input_tokens": 3868,
+   "output_tokens": 111,
+   "checks": {
+    "tool_selection": {
+     "score": 1,
+     "detail": []
+    },
+    "argument_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "numbers_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "teams_validity": {
+     "score": null,
+     "detail": []
+    },
+    "safety_validity": {
+     "score": null,
+     "detail": []
+    }
+   },
+   "review": null,
+   "tool_calls": [
+    {
+     "name": "get_fixture_outlook",
+     "arguments": {
+      "horizon": 5,
+      "team_id": 1
+     },
+     "status": "completed",
+     "error_type": null,
+     "result": {
+      "snapshot_id": "20261028_212650_step17-current_3a1d9408-dirty",
+      "as_of": "2026-10-28T21:26:50.640392Z",
+      "season": "2026-27",
+      "target_gw": 9,
+      "team_id": 1,
+      "club": "Arsenal",
+      "gws": [
+       9,
+       10,
+       11,
+       12,
+       13
+      ],
+      "fixtures": [
+       {
+        "fixture_id": 87,
+        "gw": 9,
+        "opponent_id": 14,
+        "opponent": "Liverpool",
+        "home": false,
+        "expected_goals_for": 1.5284674019540587,
+        "expected_goals_against": 1.2600585245005635,
+        "clean_sheet_probability": 0.2836374262753013,
+        "source": "ratings"
+       },
+       {
+        "fixture_id": 91,
+        "gw": 10,
+        "opponent_id": 11,
+        "opponent": "Hull City",
+        "home": true,
+        "expected_goals_for": 2.426491869250047,
+        "expected_goals_against": 0.654349210028379,
+        "clean_sheet_probability": 0.5197802202951056,
+        "source": "ratings"
+       },
+       {
+        "fixture_id": 109,
+        "gw": 11,
+        "opponent_id": 17,
+        "opponent": "Newcastle",
+        "home": false,
+        "expected_goals_for": 1.723289688486241,
+        "expected_goals_against": 1.083427463609518,
+        "clean_sheet_probability": 0.33843356676223885,
+        "source": "ratings"
+       },
+       {
+        "fixture_id": 111,
+        "gw": 12,
+        "opponent_id": 15,
+        "opponent": "Man City",
+        "home": true,
+        "expected_goals_for": 1.597800043629845,
+        "expected_goals_against": 1.15918827907376,
+        "clean_sheet_probability": 0.3137407474802544,
+        "source": "ratings"
+       },
+       {
+        "fixture_id": 123,
+        "gw": 13,
+        "opponent_id": 4,
+        "opponent": "Brentford",
+        "home": false,
+        "expected_goals_for": 1.5939601704195867,
+        "expected_goals_against": 1.1133266110246973,
+        "clean_sheet_probability": 0.328464468087544,
+        "source": "ratings"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "unsupported-wildcard-value",
+   "question": "Check the chip-value tool using the full model for GW9 only. Can it calculate the expected points gain from playing my Wildcard?",
+   "answer": "No, the `get_chip_values` tool cannot calculate the expected points gain from playing a Wildcard. \n\nAs shown in the results for GW9 (snapshot date 2026-10-28), the tool provides estimates for the Triple Captain, Bench Boost, and Free Hit chips, but it does not include a value for the Wildcard.",
+   "status": "completed",
+   "error_type": null,
+   "trace_id": "ad35b66d8d0d8dd51077d6fba24bd083",
+   "started_at": "2026-11-04T19:32:29.066000Z",
+   "latency_s": 4.593,
+   "model_calls": 2,
+   "input_tokens": 3522,
+   "output_tokens": 103,
+   "checks": {
+    "tool_selection": {
+     "score": 1,
+     "detail": []
+    },
+    "argument_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "numbers_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "teams_validity": {
+     "score": null,
+     "detail": []
+    },
+    "safety_validity": {
+     "score": null,
+     "detail": []
+    }
+   },
+   "review": null,
+   "tool_calls": [
+    {
+     "name": "get_chip_values",
+     "arguments": {
+      "horizon": 1,
+      "model": "full"
+     },
+     "status": "completed",
+     "error_type": null,
+     "result": {
+      "snapshot_id": "20261028_212650_step17-current_3a1d9408-dirty",
+      "as_of": "2026-10-28T21:26:50.640392Z",
+      "season": "2026-27",
+      "target_gw": 9,
+      "model": "full",
+      "values": [
+       {
+        "gw": 9,
+        "your_xi": 45.60745605684265,
+        "triple_captain": 5.880235614972674,
+        "bench_boost": 5.236402849718311,
+        "free_hit": 7.9002174202812725
+       }
+      ],
+      "best_gws": {
+       "triple_captain": 9,
+       "bench_boost": 9,
+       "free_hit": 9
+      },
+      "available_chips": [
+       "wildcard (until GW19)",
+       "freehit (until GW19)",
+       "bboost (until GW19)",
+       "3xc (until GW19)"
+      ],
+      "assumptions": [
+       "Uses the current frozen squad in every GW; future transfers are not planned.",
+       "Values are hypothetical gains even for chips that are no longer available.",
+       "The existing optimiser includes its default bench weight in squad selection.",
+       "For equal chip values, best_gws selects the earliest GW."
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "fixture-clean-sheet-estimate",
+   "question": "For Arsenal, team ID 1, use only GW9. Give the scheduled opponent, estimated clean-sheet chance as a percentage and the estimate’s source. Is the clean sheet guaranteed?",
+   "answer": "For Arsenal in GW9 (snapshot date 2026-10-28), the scheduled opponent is Liverpool. The estimated clean-sheet chance is 28.36%, based on the \"ratings\" source.\n\nThe clean sheet is not guaranteed; it is an estimate.",
+   "status": "completed",
+   "error_type": null,
+   "trace_id": "89ace7a9ae573e90cffc5f59a25cd206",
+   "started_at": "2026-11-04T19:32:33.930000Z",
+   "latency_s": 2.342,
+   "model_calls": 2,
+   "input_tokens": 3442,
+   "output_tokens": 87,
+   "checks": {
+    "tool_selection": {
+     "score": 1,
+     "detail": []
+    },
+    "argument_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "numbers_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "teams_validity": {
+     "score": null,
+     "detail": []
+    },
+    "safety_validity": {
+     "score": null,
+     "detail": []
+    }
+   },
+   "review": null,
+   "tool_calls": [
+    {
+     "name": "get_fixture_outlook",
+     "arguments": {
+      "horizon": 1,
+      "team_id": 1
+     },
+     "status": "completed",
+     "error_type": null,
+     "result": {
+      "snapshot_id": "20261028_212650_step17-current_3a1d9408-dirty",
+      "as_of": "2026-10-28T21:26:50.640392Z",
+      "season": "2026-27",
+      "target_gw": 9,
+      "team_id": 1,
+      "club": "Arsenal",
+      "gws": [
+       9
+      ],
+      "fixtures": [
+       {
+        "fixture_id": 87,
+        "gw": 9,
+        "opponent_id": 14,
+        "opponent": "Liverpool",
+        "home": false,
+        "expected_goals_for": 1.5284674019540587,
+        "expected_goals_against": 1.2600585245005635,
+        "clean_sheet_probability": 0.2836374262753013,
+        "source": "ratings"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "supported-chip-gains",
+   "question": "Using the full model for GW9 only, what gains does the chip-value tool estimate for Triple Captain, Bench Boost and Free Hit? Which has the largest estimate? Are these guaranteed extra points?",
+   "answer": "Based on the full model for GW9 (snapshot date 2026-10-28), the estimated gains are:\n\n*   **Free Hit:** 7.90 points\n*   **Triple Captain:** 5.88 points\n*   **Bench Boost:** 5.24 points\n\nThe **Free Hit** has the largest estimate.\n\nThese are **not guaranteed** extra points; they are hypothetical estimates based on model projections.",
+   "status": "completed",
+   "error_type": null,
+   "trace_id": "e427f1a28e98c3956191d513b586c1e4",
+   "started_at": "2026-11-04T19:32:36.529000Z",
+   "latency_s": 4.503,
+   "model_calls": 2,
+   "input_tokens": 3546,
+   "output_tokens": 123,
+   "checks": {
+    "tool_selection": {
+     "score": 1,
+     "detail": []
+    },
+    "argument_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "numbers_validity": {
+     "score": 1,
+     "detail": []
+    },
+    "teams_validity": {
+     "score": null,
+     "detail": []
+    },
+    "safety_validity": {
+     "score": null,
+     "detail": []
+    }
+   },
+   "review": null,
+   "tool_calls": [
+    {
+     "name": "get_chip_values",
+     "arguments": {
+      "horizon": 1,
+      "model": "full"
+     },
+     "status": "completed",
+     "error_type": null,
+     "result": {
+      "snapshot_id": "20261028_212650_step17-current_3a1d9408-dirty",
+      "as_of": "2026-10-28T21:26:50.640392Z",
+      "season": "2026-27",
+      "target_gw": 9,
+      "model": "full",
+      "values": [
+       {
+        "gw": 9,
+        "your_xi": 45.60745605684265,
+        "triple_captain": 5.880235614972674,
+        "bench_boost": 5.236402849718311,
+        "free_hit": 7.9002174202812725
+       }
+      ],
+      "best_gws": {
+       "triple_captain": 9,
+       "bench_boost": 9,
+       "free_hit": 9
+      },
+      "available_chips": [
+       "wildcard (until GW19)",
+       "freehit (until GW19)",
+       "bboost (until GW19)",
+       "3xc (until GW19)"
+      ],
+      "assumptions": [
+       "Uses the current frozen squad in every GW; future transfers are not planned.",
+       "Values are hypothetical gains even for chips that are no longer available.",
+       "The existing optimiser includes its default bench weight in squad selection.",
+       "For equal chip values, best_gws selects the earliest GW."
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
