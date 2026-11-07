@@ -431,6 +431,17 @@ def cmd_rescore(settings: Settings, args):
             print(f"{check}: {', '.join(case_ids)}")
 
 
+@command("export-evals", "Write the evaluation runs as redacted JSON files for the web pages")
+def cmd_export_evals(settings: Settings, args):
+    from fpl.evals.export import EXPORT_DIR, export_runs
+
+    if not (settings.team_name and settings.league_name and settings.entry_id):
+        raise SystemExit("Set FPL_TEAM_NAME, FPL_LEAGUE_NAME and FPL_ENTRY_ID in .env first: the export removes them.")
+    count = export_runs(settings.data_dir / "evals", EXPORT_DIR,
+                        settings.team_name, settings.league_name, settings.entry_id)
+    print(f"Wrote {count} runs to {EXPORT_DIR}")
+
+
 def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
