@@ -41,5 +41,13 @@ def test_history_returns_only_the_results_to_htmx():
     assert "<html" not in response.text
 
 
+def test_pages_answer_head_requests_with_the_security_headers():
+    response = client.head("/evals")
+
+    assert response.status_code == 200
+    assert response.headers["strict-transport-security"] == "max-age=31536000; includeSubDomains"
+    assert response.headers["content-security-policy"].startswith("default-src 'self'")
+
+
 def test_health_check():
     assert client.get("/healthz").text == "ok"
