@@ -6,6 +6,7 @@
   {# htmx adds an inline style for its indicators unless told not to; the CSP blocks inline styles. #}
   <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
   <title>{% block title %}{% endblock %} · FPL agent</title>
+  <script src="/static/app.js"></script>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
@@ -13,14 +14,18 @@
 {% set shell = page.shell %}
 <div class="layout">
   <header class="shell">
-    <a class="brand" href="/evals">
-      <span class="mark" aria-hidden="true">fpl</span>
-      <span class="brand-text"><strong>FPL agent</strong><span>Season 2026-27</span></span>
-    </a>
+    <div class="shell-head">
+      <a class="brand" href="/evals">
+        <span class="mark" aria-hidden="true">fpl</span>
+        <span class="brand-text"><strong>FPL agent</strong><span>Season 2026-27</span></span>
+      </a>
+      <button class="icon-button sidebar-toggle" type="button" data-toggle="sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">{% include "icons/sidebar.svg" %}</button>
+    </div>
     <nav class="nav" aria-label="Pages">
-      <a href="/evals"{% if shell.active == "evals" %} aria-current="page"{% endif %}>{% include "icons/evals.svg" %}Evals</a>
-      <a href="/history"{% if shell.active == "history" %} aria-current="page"{% endif %}>{% include "icons/history.svg" %}History</a>
+      <a href="/evals"{% if shell.active == "evals" %} aria-current="page"{% endif %} title="Evals">{% include "icons/evals.svg" %}<span class="label">Evals</span></a>
+      <a href="/history"{% if shell.active == "history" %} aria-current="page"{% endif %} title="History">{% include "icons/history.svg" %}<span class="label">History</span></a>
     </nav>
+    <button class="theme-toggle" type="button" data-toggle="theme" title="Switch between light and dark">{% include "icons/theme.svg" %}<span class="label">Switch theme</span></button>
     <dl class="data-status">
       <div class="status-model">
         <dt>Pilot model</dt>
