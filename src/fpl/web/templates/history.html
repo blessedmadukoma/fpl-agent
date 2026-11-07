@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}History{% endblock %}
+
+{% block main %}
+<div class="page-header">
+  <div>
+    <h1>History</h1>
+    <p class="lead">Every recorded answer, newest first: evaluation cases now, live questions from R2. Open a row to see the answer, its tool calls and its checks.</p>
+  </div>
+</div>
+
+<form class="toolbar" action="/history" method="get" role="search"
+      hx-get="/history" hx-target="#results" hx-swap="outerHTML" hx-push-url="true"
+      hx-trigger="submit, input delay:300ms">
+  <label class="search">
+    {% include "icons/search.svg" %}
+    <span class="visually-hidden">Search questions</span>
+    <input type="search" name="q" value="{{ page.q }}" placeholder="Search questions" autocomplete="off">
+  </label>
+  <label class="chip">
+    <span class="visually-hidden">Status</span>
+    <select name="status">
+      <option value="">Status: all</option>
+      {% for status in ["completed", "error"] %}
+      <option value="{{ status }}"{% if status == page.status %} selected{% endif %}>Status: {{ status }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="chip">
+    <span class="visually-hidden">Run</span>
+    <select name="run">
+      <option value="">Run: all</option>
+      {% for run in page.run_options %}
+      <option value="{{ run }}"{% if run == page.run %} selected{% endif %}>Run: {{ run }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="chip">
+    <span class="visually-hidden">Tool</span>
+    <select name="tool">
+      <option value="">Tool: any</option>
+      {% for tool in page.tool_options %}
+      <option value="{{ tool }}"{% if tool == page.tool %} selected{% endif %}>Tool: {{ tool }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <p class="count" id="history-count">{{ "{:,}".format(page.total) }} questions</p>
+  <noscript><button class="button" type="submit">Apply</button></noscript>
+</form>
+
+{% set full_page = true %}
+{% include "history_results.html" %}
+{% endblock %}

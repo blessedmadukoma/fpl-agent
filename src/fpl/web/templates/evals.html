@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, ratio, temperature, latency, cost %}
+
+{% block title %}Evals{% endblock %}
+
+{% macro stat(label, value, note) -%}
+<div class="stat">
+  <p class="stat-label">{{ label }}</p>
+  <p class="stat-value">{{ value }}</p>
+  <p class="stat-note">{{ note }}</p>
+</div>
+{%- endmacro %}
+
+{% macro run_row(row, kind, repeats=1) -%}
+<tr class="row-{{ kind }}">
+  <th scope="row" class="col-run">
+    {% if kind == "total" %}
+    <details><summary><span class="run-name mono">{{ row.run_id }}</span></summary></details>
+    <span class="dataset mono">{{ row.dataset }} · {{ repeats }} runs of {{ row.case_count // repeats }} cases</span>
+    {% else %}
+    <a class="run-name mono" href="/history?{{ {"run": row.run_id}|urlencode }}">{{ row.run_id }}</a>
+    {% if kind == "single" %}<span class="dataset mono">{{ row.dataset }} · {{ row.case_count }} cases</span>{% endif %}
+    {% endif %}
+  </th>
+  <td>{{ ratio(row.completed) }}</td>
+  <td>{{ ratio(row.tool_selection) }}</td>
+  <td>{{ ratio(row.argument_validity) }}</td>
+  <td>{{ ratio(row.answer_checks, "not scored") }}</td>
+  <td>{{ ratio(row.task_success, "not reviewed") }}</td>
+  <td>{{ latency(row.median_latency_s) }}</td>
+  <td class="small">{{ cost(row.cost_per_case_usd) }}</td>
+  <td>{{ temperature(row.temperature) }}</td>
+  <td class="mono commit">{{ row.commit }}</td>
+  <td class="small date">{{ row.created_at.strftime("%-d %b, %H:%M") }}</td>
+</tr>
+{%- endmacro %}
+
+{% block main %}
+{% set latest = page.latest %}
+<div class="page-header">
+  <div>
+    <h1>Evals</h1>
+    <p class="lead">Fixed cases run against a frozen snapshot. Each case is scored on tool selection and argument validity; runs from Step 19 also have answer checks for numbers, teams and safety.</p>
+  </div>
+  <p class="cli-hint mono">New runs: make eval-baseline</p>
+</div>
+
+<section class="section" aria-labelledby="latest-title">
+  <div class="section-head">
+    <h2 id="latest-title">Latest full run</h2>
+    <p class="meta">{{ latest.run_id }} · {{ latest.model }} · temp {{ temperature(latest.temperature) }} · commit {{ latest.commit }} · {{ latest.created_at.strftime("%-d %b %Y, %H:%M") }} UTC</p>
+  </div>
+  <div class="stats">
+    {{ stat("Completed", ratio(latest.completed), "cases returned an answer") }}
+    {{ stat("Tool selection", ratio(latest.tool_selection), "called the expected tools") }}
+    {{ stat("Argument validity", ratio(latest.argument_validity), "used the expected arguments") }}
+    {{ stat("Answer checks", ratio(latest.answer_checks, "not scored"), "numbers, teams and safety") }}
+    {{ stat("Median latency", latency(latest.median_latency_s), cost(latest.cost_per_case_usd) ~ " per case") }}
+  </div>
+</section>
+
+<section class="section" aria-labelledby="runs-title">
+  <div class="section-head">
+    <h2 id="runs-title">Runs</h2>
+    <p class="meta scroll-hint">Swipe sideways for all 11 columns. The run column stays in place.</p>
+  </div>
+  <div class="table-frame scrolls">
+    <div class="table-scroll">
+      <table class="runs">
+        <thead>
+          <tr>
+            <th scope="col" class="col-run">Run</th>
+            <th scope="col">Completed</th>
+            <th scope="col">Tools</th>
+            <th scope="col">Arguments</th>
+            <th scope="col">Answer checks</th>
+            <th scope="col">Task success</th>
+            <th scope="col">Median latency</th>
+            <th scope="col">Cost / case</th>
+            <th scope="col">Temp</th>
+            <th scope="col">Commit</th>
+            <th scope="col">Date (UTC)</th>
+          </tr>
+        </thead>
+        {% for group in page.groups %}
+        <tbody class="group">
+          {% if group.runs|length == 1 %}
+          {{ run_row(group.runs[0], "single") }}
+          {% else %}
+          {{ run_row(group.total, "total", group.runs|length) }}
+          {% for run in group.runs %}{{ run_row(run, "child") }}{% endfor %}
+          {% endif %}
+        </tbody>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="failed-title">
+  <div class="section-head">
+    <h2 id="failed-title">Failed checks</h2>
+    {% set failed = page.failed_checks|length %}
+    <p class="meta">{{ latest.run_id }} · {{ failed }} of {{ latest.case_count }} cases · {{ latest.case_count - failed }} passed every check</p>
+  </div>
+  {% if page.failed_checks %}
+  <ul class="failed-list">
+    {% for item in page.failed_checks %}
+    <li>
+      <a class="case mono" href="/answers/{{ latest.run_id|urlencode }}/{{ item.case_id|urlencode }}">{{ item.case_id }}</a>
+      <span class="badges">{% for check in item.checks %}{{ badge("danger", check) }}{% endfor %}</span>
+      <span class="detail">{{ item.detail }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Every case passed every check.</p>
+  {% endif %}
+</section>
+{% endblock %}

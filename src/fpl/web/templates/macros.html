@@ -1,0 +1,36 @@
+{% macro badge(tone, label) -%}
+<span class="badge badge-{{ tone }}">{{ label }}</span>
+{%- endmacro %}
+
+{% macro status_badge(status) -%}
+{{ badge({"completed": "success", "rejected": "warning", "error": "danger"}[status], status) }}
+{%- endmacro %}
+
+{% macro score_badge(score) -%}
+{% if score == 1 %}{{ badge("success", "pass") }}{% elif score == 0 %}{{ badge("danger", "fail") }}{% else %}{{ badge("neutral", "n/a") }}{% endif %}
+{%- endmacro %}
+
+{% macro ratio(value, missing="n/a") -%}
+{% if value is none %}<span class="none">{{ missing }}</span>
+{%- else %}<span class="ratio{% if value.passed == value.total %} full{% endif %}">{{ value.passed }} / {{ value.total }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro temperature(value) -%}
+{% if value is none %}<span class="none">n/a</span>{% else %}{{ "%g"|format(value) }}{% endif %}
+{%- endmacro %}
+
+{% macro latency(seconds) -%}
+{% if seconds is none %}<span class="none">n/a</span>{% else %}{{ "%.1f"|format(seconds) }} s{% endif %}
+{%- endmacro %}
+
+{% macro cost(usd) -%}
+{% if usd is none %}<span class="none">n/a</span>{% else %}USD {{ "%.4f"|format(usd) }}{% endif %}
+{%- endmacro %}
+
+{% macro tools(names) -%}
+{% if names %}{{ names[0] }}{% if names|length > 1 %} +{{ names|length - 1 }}{% endif %}{% else %}<span class="none">no tool call</span>{% endif %}
+{%- endmacro %}
+
+{% macro history_url(page, number) -%}
+/history?{{ {"q": page.q, "run": page.run, "status": page.status, "tool": page.tool, "page": number}|dictsort|selectattr("1")|list|urlencode }}
+{%- endmacro %}

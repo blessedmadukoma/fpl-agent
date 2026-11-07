@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, status_badge, score_badge, temperature, latency %}
+
+{% block title %}Answer · {{ page.case.case_id }}{% endblock %}
+
+{% block main %}
+{% set check_labels = {
+  "tool_selection": ("Tool selection", "missing: "),
+  "argument_validity": ("Arguments", ""),
+  "numbers_validity": ("Numbers", "unsupported: "),
+  "teams_validity": ("Teams", "missing: "),
+  "safety_validity": ("Safety", "failed: "),
+} %}
+{% set run, case = page.run, page.case %}
+<div class="page-header">
+  <div>
+    <a class="back" href="/history">← History</a>
+    <h1>Answer</h1>
+    <p class="lead">Asked during eval run {{ run.run_id }} · case {{ case.case_id }} · snapshot GW{{ run.target_gw }}</p>
+  </div>
+</div>
+
+<section class="card question-card" aria-labelledby="question-title">
+  <h2 class="card-label" id="question-title">Question</h2>
+  <p class="question-text">{{ case.question }}</p>
+</section>
+
+<div class="result">
+  <section class="card answer-card" aria-labelledby="answer-title">
+    <div class="answer-head">
+      <h2 id="answer-title">Answer</h2>
+      {{ status_badge(case.status) }}
+      <span class="trace mono">trace {{ case.trace_id[:8] }}</span>
+    </div>
+    <div class="answer-body markdown">
+      {% if case.answer %}
+      {{ case.answer|markdown }}
+      {% else %}
+      <p class="empty">No answer. The run stopped with {{ case.error_type or "an error" }}.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="side">
+    <section class="card details-card" aria-labelledby="run-title">
+      <h2 id="run-title">Run</h2>
+      <dl class="details">
+        <div><dt>Status</dt><dd>{{ status_badge(case.status) }}</dd></div>
+        <div><dt>Target gameweek</dt><dd>GW{{ run.target_gw }}</dd></div>
+        <div><dt>Model</dt><dd class="mono">{{ run.model }}</dd></div>
+        <div><dt>Temperature</dt><dd class="mono">{{ temperature(run.temperature) }}</dd></div>
+        <div><dt>Model calls</dt><dd>{% if case.model_calls is none %}<span class="none">n/a</span>{% else %}{{ case.model_calls }} of 4{% endif %}</dd></div>
+        <div><dt>Tool calls</dt><dd>{{ case.tool_calls|length }}</dd></div>
+        <div><dt>Latency</dt><dd>{{ latency(case.latency_s) }}</dd></div>
+        <div><dt>Tokens</dt><dd>{% if case.input_tokens is none %}<span class="none">n/a</span>{% else %}{{ "{:,}".format(case.input_tokens) }} in · {{ "{:,}".format(case.output_tokens) }} out{% endif %}</dd></div>
+        <div class="stacked"><dt>Snapshot ID</dt><dd class="mono">{{ run.snapshot_id }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="card checks-card" aria-labelledby="checks-title">
+      <h2 id="checks-title">Checks</h2>
+      <ul class="checks">
+        {% for name, check in case.checks.items() %}
+        {% set label, prefix = check_labels[name] %}
+        <li>
+          <div class="check-row"><span>{{ label }}</span>{{ score_badge(check.score) }}</div>
+          {% if check.score == 0 %}{% for item in check.detail %}<p class="check-detail">{{ prefix }}{{ item }}</p>{% endfor %}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if case.review %}
+      <h3>Hand review</h3>
+      <ul class="checks">
+        <li><div class="check-row"><span>Task success</span>{{ score_badge(case.review.task_success) }}</div></li>
+        {% if case.review.fact_recall is not none %}<li><div class="check-row"><span>Fact recall</span>{{ score_badge(case.review.fact_recall) }}</div></li>{% endif %}
+        {% if case.review.groundedness is not none %}<li><div class="check-row"><span>Groundedness</span>{{ score_badge(case.review.groundedness) }}</div></li>{% endif %}
+      </ul>
+      {% if case.review.note.strip() %}<p class="review-note">{{ case.review.note.strip() }}</p>{% endif %}
+      {% endif %}
+    </section>
+
+    <section class="card tools-card" aria-labelledby="tools-title">
+      <h2 id="tools-title">Tool calls</h2>
+      {% for call in case.tool_calls %}
+      <div class="tool-call">
+        <div class="tool-head"><span class="mono tool-name">{{ loop.index }}&nbsp;&nbsp;{{ call.name }}</span>{{ status_badge(call.status) }}</div>
+        <pre class="code">{{ call.arguments|tojson(indent=2) }}</pre>
+        {% if call.error_type %}<p class="check-detail">{{ call.error_type }}</p>{% endif %}
+        {% if call.result is not none %}
+        <details class="result-details">
+          <summary>{% if call.result is mapping %}Result fields: {{ call.result.keys()|join(", ") }}. {% endif %}<span class="link">Show full result</span></summary>
+          <pre class="code">{{ call.result|tojson(indent=2) }}</pre>
+        </details>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="empty">No tool call.</p>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% from "macros.html" import status_badge, tools, history_url %}
+{# Returned alone for HTMX requests; the count then updates out of band. #}
+{% if not full_page %}
+<p class="count" id="history-count" hx-swap-oob="true">{{ "{:,}".format(page.total) }} questions</p>
+{% endif %}
+<div id="results" class="results">
+  {% if page.rows %}
+  <div class="table-frame">
+    <table class="history">
+      <thead>
+        <tr>
+          <th scope="col" class="col-asked">Asked</th>
+          <th scope="col" class="col-question">Question</th>
+          <th scope="col" class="col-run">Run</th>
+          <th scope="col" class="col-tools">Tools</th>
+          <th scope="col" class="col-status">Status</th>
+          <th scope="col" class="col-trace">Trace</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in page.rows %}
+        <tr>
+          <td class="col-asked">{{ row.asked_at.strftime("%-d %b · %H:%M") }}</td>
+          <td class="col-question"><a href="/answers/{{ row.run_id|urlencode }}/{{ row.case_id|urlencode }}">{{ row.question }}</a></td>
+          <td class="col-run mono">{{ row.run_id }}</td>
+          <td class="col-tools mono">{{ tools(row.tools) }}</td>
+          <td class="col-status">{{ status_badge(row.status) }}</td>
+          <td class="col-trace mono">{{ row.trace_id[:8] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">No questions match these filters.</p>
+  {% endif %}
+  <nav class="pagination" aria-label="Result pages">
+    {% set first = (page.page - 1) * page.page_size + 1 %}
+    {% set last = [page.page * page.page_size, page.total]|min %}
+    <p>{% if page.total %}Showing {{ first }}–{{ last }} of {{ "{:,}".format(page.total) }}{% else %}No results{% endif %}</p>
+    {% for label, number, enabled in [("Previous", page.page - 1, page.page > 1), ("Next", page.page + 1, page.page < page.page_count)] %}
+    {% if enabled %}
+    <a class="button" href="{{ history_url(page, number) }}" hx-get="{{ history_url(page, number) }}" hx-target="#results" hx-swap="outerHTML" hx-push-url="true">{{ label }}</a>
+    {% else %}
+    <span class="button" aria-disabled="true">{{ label }}</span>
+    {% endif %}
+    {% endfor %}
+  </nav>
+</div>

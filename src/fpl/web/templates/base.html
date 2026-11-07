@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# htmx adds an inline style for its indicators unless told not to; the CSP blocks inline styles. #}
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
+  <title>{% block title %}{% endblock %} · FPL agent</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+{% set shell = page.shell %}
+<div class="layout">
+  <header class="shell">
+    <a class="brand" href="/evals">
+      <span class="mark" aria-hidden="true">fpl</span>
+      <span class="brand-text"><strong>FPL agent</strong><span>Season 2026-27</span></span>
+    </a>
+    <nav class="nav" aria-label="Pages">
+      <a href="/evals"{% if shell.active == "evals" %} aria-current="page"{% endif %}>{% include "icons/evals.svg" %}Evals</a>
+      <a href="/history"{% if shell.active == "history" %} aria-current="page"{% endif %}>{% include "icons/history.svg" %}History</a>
+    </nav>
+    <dl class="data-status">
+      <div class="status-model">
+        <dt>Pilot model</dt>
+        <dd class="mono">{{ shell.pilot_model }} · temp {{ "%g"|format(shell.pilot_temperature) }}</dd>
+      </div>
+      <div class="status-snapshot">
+        <dt>Snapshot</dt>
+        <dd>GW{{ shell.snapshot_gw }} · {{ shell.snapshot_created_at.strftime("%-d %b, %H:%M") }}</dd>
+      </div>
+    </dl>
+  </header>
+  <main class="main">
+    {% block main %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>
