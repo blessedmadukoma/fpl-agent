@@ -17,6 +17,9 @@ class Settings:
     current_season: str = "2026-27"
     history_season: str = "2025-26"
     fpl_base_url: str = ""
+    # Removed from the evaluation exports, which are public.
+    team_name: str = ""
+    league_name: str = ""
 
     ollama_api_key: str = ""
     ollama_model: str = "gpt-oss:120b"
@@ -53,6 +56,8 @@ def load_settings() -> Settings:
     current_season = os.getenv("CURRENT_SEASON", "")
     history_season = os.getenv("HISTORY_SEASON", "")
     fpl_base_url = os.getenv("FPL_BASE_URL", "")
+    team_name = os.getenv("FPL_TEAM_NAME", "")
+    league_name = os.getenv("FPL_LEAGUE_NAME", "")
 
     ollama_api_key = os.getenv("OLLAMA_API_KEY", "")
     ollama_model = os.getenv("OLLAMA_MODEL", "")
@@ -80,6 +85,8 @@ def load_settings() -> Settings:
         current_season=current_season,
         history_season=history_season,
         fpl_base_url=fpl_base_url,
+        team_name=team_name,
+        league_name=league_name,
         ollama_base_url=ollama_base_url,
         ollama_api_key=ollama_api_key,
         ollama_model=ollama_model,
