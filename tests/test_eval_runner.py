@@ -10,6 +10,7 @@ import pytest
 
 from fpl.config import Settings
 from fpl.evals import runner
+from fpl.evals.records import load_cases
 
 
 @pytest.fixture(autouse=True)
@@ -117,7 +118,7 @@ def test_load_cases_reads_unicode_and_ignores_blank_lines(tmp_path):
     )
     path.write_text("\n" + text + "\n\n", encoding="utf-8")
 
-    assert runner.load_cases(path) == expected
+    assert load_cases(path) == expected
 
 
 def test_load_cases_rejects_malformed_json(tmp_path):
@@ -125,7 +126,7 @@ def test_load_cases_rejects_malformed_json(tmp_path):
     path.write_text("{\n", encoding="utf-8")
 
     with pytest.raises(json.JSONDecodeError):
-        runner.load_cases(path)
+        load_cases(path)
 
 
 def test_run_case_records_evaluation_context_and_selected_snapshot(
@@ -248,7 +249,7 @@ def test_batch_saves_before_next_case_and_continues_after_failure(
         run_id, case_id, trace_context,
     ):
         if questions:
-            assert len(runner.load_cases(destination)) == 1
+            assert len(load_cases(destination)) == 1
         assert run_id == "test-run"
         trace_context["trace_id"] = f"trace-{case_id}"
         questions.append(question)
@@ -258,7 +259,7 @@ def test_batch_saves_before_next_case_and_continues_after_failure(
 
     monkeypatch.setattr(runner, "agent_loop", fake_agent)
     runner.run_cases(settings, cases, destination, run_id="test-run")
-    records = runner.load_cases(destination)
+    records = load_cases(destination)
 
     assert questions == [case["input"] for case in cases]
     assert [record["status"] for record in records] == [
@@ -420,12 +421,12 @@ def test_save_results_streams_unicode_records(tmp_path):
 
     def produce_records():
         yield records[0]
-        assert runner.load_cases(destination) == [records[0]]
+        assert load_cases(destination) == [records[0]]
         yield records[1]
 
     runner.save_results(produce_records(), destination)
 
-    assert runner.load_cases(destination) == records
+    assert load_cases(destination) == records
     assert "Groß" in destination.read_text(encoding="utf-8")
 
 

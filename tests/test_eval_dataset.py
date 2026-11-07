@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from fpl.agent.service import TOOL_REGISTRY
-from fpl.evals.runner import load_cases
+from fpl.evals.records import load_cases
 
 
 DATASET_ROOT = Path(__file__).resolve().parents[1] / "evals"

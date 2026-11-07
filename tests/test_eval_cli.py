@@ -15,6 +15,7 @@ from fpl import cli
 from fpl.agent import observability
 from fpl.config import Settings
 from fpl.evals import runner
+from fpl.evals.records import load_cases
 
 
 @pytest.fixture(autouse=True)
@@ -90,7 +91,7 @@ def evaluation(tmp_path, monkeypatch):
         assert supplied_settings is settings
         assert directory == snapshot
         assert run_id == "test-run"
-        saved_manifest = runner.load_cases(root / "test-run-manifest.jsonl")
+        saved_manifest = load_cases(root / "test-run-manifest.jsonl")
         assert saved_manifest[0]["case_count"] == len(cases)
         case = next(case for case in cases if case["id"] == case_id)
         assert question == case["input"]
@@ -124,9 +125,9 @@ def test_eval_runs_once_and_saves_manifest_results_and_scores(
         snapshot_root=evaluation.snapshot.parent, run_id="test-run",
     )
     assert evaluation.calls == ["bank", "chip"]
-    raw = runner.load_cases(evaluation.root / "test-run.jsonl")
-    scored = runner.load_cases(evaluation.root / "test-run-scored.jsonl")
-    manifest = runner.load_cases(evaluation.root / "test-run-manifest.jsonl")
+    raw = load_cases(evaluation.root / "test-run.jsonl")
+    scored = load_cases(evaluation.root / "test-run-scored.jsonl")
+    manifest = load_cases(evaluation.root / "test-run-manifest.jsonl")
     assert len(raw) == len(scored) == 2
     assert len(manifest) == 1
     for record in raw + scored:
@@ -290,7 +291,7 @@ def test_rescore_scores_a_saved_run_without_model_calls(evaluation, capsys):
     cli.main(["rescore", "--cases", str(evaluation.dataset),
               "--run-id", "test-run"])
 
-    rescored = runner.load_cases(evaluation.root / "test-run-rescored.jsonl")
+    rescored = load_cases(evaluation.root / "test-run-rescored.jsonl")
     assert [record["scores"]["numbers_validity"]["score"]
             for record in rescored] == [1, 0]
     assert capsys.readouterr().out == "numbers_validity: chip\n"

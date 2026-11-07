@@ -18,7 +18,8 @@ from fpl.agent.model import SYSTEM_PROMPT_PATH, message_client
 from fpl.agent.observability import build_run_metadata
 from fpl.agent.service import tool_definitions
 from fpl.config import Settings, load_settings
-from fpl.evals.runner import load_cases, run_cases, save_results, score_results
+from fpl.evals.records import load_cases
+from fpl.evals.runner import run_cases, save_results, score_results
 from fpl.evals.snapshot import validate_snapshot
 from fpl.evals.snapshot_files import calculate_file_sha256, read_manifest
 from fpl.fplapi import FplClient
