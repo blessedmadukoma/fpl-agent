@@ -512,6 +512,14 @@ dev = [
 dev = [
     { name = "pytest" },
 ]
+web = [
+    { name = "fastapi" },
+    { name = "jinja2" },
+    { name = "markdown-it-py" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "uvicorn" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -538,6 +546,14 @@ provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+web = [
+    { name = "fastapi", specifier = ">=0.162.2" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "markdown-it-py", specifier = ">=4.2.0" },
+    { name = "pydantic", specifier = ">=2.13.5" },
+    { name = "python-dotenv" },
+    { name = "uvicorn", specifier = ">=0.54.0" },
+]
 
 [[package]]
 name = "googleapis-common-protos"
