@@ -1,38 +1,8 @@
-services:
-  db:
-    image: postgres:18-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: fpl
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: fpl
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./backups:/backups
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fpl -d fpl"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # Not published to the host. Only the app container reaches it.
-    expose:
-      - "5432"
-
-  app:
-    build: .
-    env_file: .env
-    environment:
-      DATABASE_URL: postgresql://fpl:${POSTGRES_PASSWORD}@db:5432/fpl
-      SNAPSHOT_ROOT: /data/snapshots
-      TZ: UTC
-    volumes:
-      - ./store:/data
-    depends_on:
-      db:
-        condition: service_healthy
-    # No restart policy and no long-running command: every job is a
-    # `docker compose run --rm app ...` that starts, works and exits.
-    profiles: ["cli"]
-
-volumes:
-  pgdata:
+# Send only what the image needs, so .env, data/ and .venv never reach a build.
+*
+!pyproject.toml
+!uv.lock
+!src/
+!exports/evals/
+**/__pycache__
+src/*.egg-info
