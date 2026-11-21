@@ -34,7 +34,7 @@ test: ## Run the complete test suite
 	$(PYTHON) -m pytest -q
 
 lint-comments: ## Fail if a file has more code comments than .comment-ratchet.json allows
-	python3 scripts/check_comments.py
+	uvx pre-commit run comment-ratchet --all-files
 
 trace-smoke: ## Check Langfuse authentication and send a harmless smoke trace
 	$(PYTHON) -c 'from fpl.agent.observability import smoke_test; smoke_test()'

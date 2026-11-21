@@ -2,12 +2,13 @@
 
 Each file records one topic: the context, the decision and its consequences.
 Most of these records started as code comments. The comment clean-up moved each
-reason here and deleted the comment, so the code holds no comments.
+reason here, so a reader finds it in one place and reviews it like any other change.
 
 ## Rules
 
-- Do not explain a decision in a code comment. `scripts/check_comments.py` fails
-  when a file has more comment lines than `.comment-ratchet.json` allows.
+- Write clean code first: a clear name, a small function or a test usually says
+  what a comment would. The `comment-ratchet` pre-commit hook fails when a file
+  has more comment lines than `.comment-ratchet.json` allows.
 - Put the reason in the ADR for its topic. Add an entry under "Where this applies"
   with the path, the symbol and the line of code, so `grep` finds the place.
 - For a new topic, copy the shape of an existing record and use the next number.
