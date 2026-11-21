@@ -1,5 +1,4 @@
 {% from "macros.html" import status_badge, tools, history_url %}
-{# Returned alone for HTMX requests; the count then updates out of band. #}
 {% if not full_page %}
 <p class="count" id="history-count" hx-swap-oob="true">{{ "{:,}".format(page.total) }} questions</p>
 {% endif %}

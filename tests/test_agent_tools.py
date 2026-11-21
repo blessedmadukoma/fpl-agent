@@ -84,7 +84,6 @@ def frozen_team(tmp_path, monkeypatch):
             "web_name varchar, position varchar, team integer, now_cost integer, "
             "status varchar, news varchar)"
         )
-        # Distracting rows catch queries that omit the season or GW filter.
         con.execute(
             "insert into state values "
             "('2025-26', 6, 15, 'Wrong Season Player', 'MID', 1, 99, 'a', ''), "
@@ -95,7 +94,6 @@ def frozen_team(tmp_path, monkeypatch):
             sorted(state_rows, key=lambda row: row[2]),
         )
 
-        # Extend the fixture with data needed by the other tools and ep_next model.
         con.execute("alter table state add column ep_next double default 2.0")
         con.execute("update state set ep_next = 6 where element = 14")
         con.execute(
@@ -118,7 +116,6 @@ def frozen_team(tmp_path, monkeypatch):
                 for p in expected_players
             ],
         )
-        # A future row and another season must not enter historical answers.
         con.execute(
             "insert into player_gw values "
             "('2026-27', 6, 15, 'GKP', 1, 90, 100, 0, 0, 1), "
@@ -227,7 +224,6 @@ def test_missing_player(frozen_team):
         con.execute(
             "delete from state where season = '2026-27' and gw = 6 and element = 15")
 
-    # Exercise the tool directly; the deliberate change invalidates snapshot hashes.
     with connect_path(frozen_team.database_path, read_only=True) as con:
         with pytest.raises(Exception, match="Player 15 not found in state table"):
             get_my_team(frozen_team.context, con)
@@ -409,7 +405,6 @@ def test_dispatch_includes_recommendation_and_rejects_unknown_tools():
 
 
 def prepare_legal_squad(frozen_team):
-    # Give owned players distinct clubs and add four equal-price stars from one club.
     with connect_path(frozen_team.database_path) as con:
         con.executemany(
             "insert into teams values ('2026-27', ?, ?)",

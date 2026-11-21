@@ -83,7 +83,6 @@ def scored_results(cases, saved_results):
 
 @pytest.fixture
 def reviews():
-    # Review order differs from result order to check the ID matching.
     return [
         {
             "case_id": "chip",

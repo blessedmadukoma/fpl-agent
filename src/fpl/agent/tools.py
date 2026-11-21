@@ -61,7 +61,6 @@ def get_my_team(snapshot_context, con: duckdb.DuckDBPyConnection) -> MyTeamSchem
     payload = snapshot_context["payload"]
     team: TeamState = snapshot_context["team"]
 
-    # build the player list
     squad_players = []
 
     for player_row in team.squad:
@@ -279,19 +278,15 @@ def get_chip_values(
     """
     request = ChipValuesInput.model_validate(request)
 
-    # 1. Use the frozen season/GW and the TeamState already loaded by the service.
     ctx = _context(snapshot_context, con)
     team = snapshot_context["team"]
     gws = _horizon_gws(ctx, request.horizon)
 
-    # 2. Build the expected-points table with the existing projection library.
     projected = _project_horizon(con, ctx, request.model, gws)
 
-    # 3. The chip library calls optimise for the owned squad and the Free Hit squad.
     values = chip_values(projected, ctx.state, team)
     rows = [ChipGwValues(**row) for row in values.to_dict(orient="records")]
 
-    # 4. Return typed data with explicit assumptions.
     best_gws = {
         chip: int(values.loc[values[chip].idxmax(), "gw"])
         for chip in ("triple_captain", "bench_boost", "free_hit")
@@ -322,7 +317,6 @@ def get_historical_leaders(
         raise ValueError(
             "Choose a finished GW before the snapshot's target GW")
 
-    # statistic is a Literal allow-list, never arbitrary model-generated SQL.
     conditions = "season = ? and gw = ?"
     parameters = [manifest["season"], request.gw]
     if request.position is not None:
@@ -374,22 +368,18 @@ def get_recommendation(snapshot_context, con: duckdb.DuckDBPyConnection, request
 
     request = RecommendationInput.model_validate(request)
 
-    # Load the frozen GwContext and team.
     ctx = _context(snapshot_context, con)
     team = snapshot_context["team"]
     gws = _horizon_gws(ctx, request.horizon)
 
-    # Build the expected-points table.
     chip_gws = chip_projection_gws(team, ctx.gw)
     projected = _project_horizon(con, ctx, request.model, sorted(set(gws + chip_gws)))
 
-    # Call the existing optimisation library.
     settings = SolverSettings(max_hits_per_gw=request.max_hits)
     recommendation = recommend_from_projections(
         ctx, team, projected[gws], settings, request.threshold,
         chip_ep=projected[chip_gws] if chip_gws else None)
 
-    # Construct a typed result.
     selected_gw_plans = [
         SelectedGwPlan(
             gw=gw_plan.gw,

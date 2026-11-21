@@ -17,7 +17,6 @@ class Settings:
     current_season: str = "2026-27"
     history_season: str = "2025-26"
     fpl_base_url: str = ""
-    # Removed from the evaluation exports, which are public.
     team_name: str = ""
     league_name: str = ""
 

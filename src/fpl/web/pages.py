@@ -28,7 +28,6 @@ class RunRow:
     completed: Ratio
     tool_selection: Ratio
     argument_validity: Ratio
-    # Cases that passed every numbers, teams and safety check that applies; None before Step 19.
     answer_checks: Ratio | None
     task_success: Ratio | None
     model: str
@@ -42,7 +41,6 @@ class RunRow:
 @dataclass
 class RunGroup:
     group: str
-    # run_id holds the group name; ratios are summed over the runs.
     total: RunRow
     runs: list[RunRow]
 

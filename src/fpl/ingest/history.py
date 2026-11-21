@@ -126,7 +126,7 @@ class FplCache:
         rows = []
         for name in names:
             parts = name.removesuffix(".json.xz").split(
-                "/")  # cache/Y/M/D/HHMM
+                "/")
             if len(parts) != 5:
                 continue
             _, y, m, d, hm = parts

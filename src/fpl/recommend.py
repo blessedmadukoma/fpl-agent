@@ -21,8 +21,7 @@ class Recommendation:
     ctx: GwContext
     team: TeamState
     ep: pd.DataFrame
-    plan: Plan          # transfers allowed in every GW
-    # no transfer this GW (roll it), transfers allowed later
+    plan: Plan
     hold: Plan
     threshold: float
     chip_decision: ChipDecision | None = None

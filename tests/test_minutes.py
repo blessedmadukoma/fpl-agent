@@ -72,13 +72,11 @@ def test_gw9_training_skips_missing_gw8_state(training_db, caplog):
 
     assert gws == [("2026-27", gw) for gw in range(2, 8)]
     assert "2026-27 GW8" in caplog.text
-    # Use real features and regressions, not a mocked training implementation.
     model = minutes_model.train(training_db, gws)
     ctx = load_context(training_db, "2026-27", 9)
     predictions = model.predict(minutes_model.features(ctx))
     assert len(predictions) == 3
     assert predictions.e_minutes.between(0, 90).all()
-    # Skipping a training example must not discard actual GW8 history.
     assert 8 in ctx.history.gw.to_list()
     assert training_db.execute(
         "select count(*) from state where gw = 8"

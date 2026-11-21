@@ -1,4 +1,3 @@
-# Send only what the image needs, so .env, data/ and .venv never reach a build.
 *
 !pyproject.toml
 !uv.lock

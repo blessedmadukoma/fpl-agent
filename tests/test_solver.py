@@ -22,7 +22,7 @@ def _universe():
         element += 1
     players = pd.DataFrame(rows)
     ep = pd.DataFrame({6: 2.0, 7: 2.0}, index=players.element)
-    ep.loc[16:19] = 8.0  # the four stars
+    ep.loc[16:19] = 8.0
     team = TeamState(0, "test", 5, tuple(SquadPlayer(e, 50, 50) for e in range(1, 16)), bank=0,
                      free_transfers=1, chips_available=(), chips_used=())
     return players, ep, team

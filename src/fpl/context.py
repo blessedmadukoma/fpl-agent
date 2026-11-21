@@ -20,10 +20,8 @@ class GwContext:
     season: str
     gw: int
     deadline: pd.Timestamp
-    # one row per player: status, flags, price, ep_next, ... at the deadline
     state: pd.DataFrame
-    history: pd.DataFrame    # player_gw rows of this season with gw < self.gw
-    # every fixture of the season (results only used for gw < self.gw)
+    history: pd.DataFrame
     fixtures: pd.DataFrame
     teams: pd.DataFrame
 

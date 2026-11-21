@@ -27,7 +27,6 @@ def replay(con, season: str, projector: Projector, gws: range) -> pd.DataFrame:
         ep = ep.merge(ctx.state[["element", "selected"]], on="element")
         frames.append(ep)
     projected = pd.concat(frames, ignore_index=True)
-    # Inner join: a player with no fixture that GW has no outcome row and is left out.
     frame = projected.merge(
         outcomes[["gw", "element", "pts"]], on=["gw", "element"])
     frame = frame.merge(pools, on=["gw", "element"], how="left")

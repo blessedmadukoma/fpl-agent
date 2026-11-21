@@ -24,9 +24,8 @@ from fpl.projections.teams import fixture_rates, team_view
 from fpl.scoring import DEFCON_THRESHOLD, Rules
 from fpl.storage import query
 
-PRIOR_90S = 6.0           # shrinkage strength k, in 90-minute matches (H.2)
-PREVIOUS_SEASON_WEIGHT = 0.5  # last season's minutes count half
-# negative-binomial φ, estimated per player on 2025/26 (close to Poisson)
+PRIOR_90S = 6.0
+PREVIOUS_SEASON_WEIGHT = 0.5
 DEFCON_DISPERSION = 16.0
 RATE_STATS = ["expected_goals", "expected_assists",
               "defensive_contribution", "saves", "yellow_cards"]
@@ -36,7 +35,6 @@ RATE_STATS = ["expected_goals", "expected_assists",
 class PointsModel:
     con: object
     minutes: minutes_model.MinutesModel
-    # last season's totals per player code (may be empty)
     previous: pd.DataFrame
     rules: Rules
 

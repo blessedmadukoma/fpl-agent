@@ -22,14 +22,12 @@ from fpl.web.templating import STATIC_DIR, templates
 
 CSP = "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
 HSTS = "max-age=31536000; includeSubDomains"
-# FastAPI routes answer HEAD only when asked to; uptime monitors send it.
 READ_METHODS = ["GET", "HEAD"]
 
 EXPORTS = [RunExport.model_validate_json(path.read_text(
     encoding="utf-8")) for path in EXPORT_DIR.glob("*.json")]
 CASES = {(export.run.run_id, case.case_id): (export.run, case)
          for export in EXPORTS for case in export.cases}
-# The 4-case runs are smoke tests on a smaller dataset, so the pilot is the newest 20-case run.
 LATEST = max((export for export in EXPORTS if len(export.cases)
              == 20), key=lambda export: export.run.created_at)
 RUN_IDS = [export.run.run_id for export in sorted(
@@ -41,7 +39,6 @@ CHECK_LABELS = {"tool_selection": "tool", "argument_validity": "arguments", "num
                 "teams_validity": "teams", "safety_validity": "safety"}
 ANSWER_CHECKS = ("numbers_validity", "teams_validity", "safety_validity")
 
-# The default /docs page loads scripts from a CDN, which the CSP blocks.
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -56,7 +53,6 @@ async def add_security_headers(request: Request, call_next):
 
 def shell(active: str) -> Shell:
     run = LATEST.run
-    # The snapshot ID starts with its creation time, for example 20261028_212650.
     created_at = datetime.strptime(run.snapshot_id[:15], "%Y%m%d_%H%M%S")
     return Shell(active=active, snapshot_gw=run.target_gw, snapshot_created_at=created_at,
                  pilot_model=run.model, pilot_temperature=run.temperature)

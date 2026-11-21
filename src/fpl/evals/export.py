@@ -13,13 +13,11 @@ from fpl.evals.records import load_cases
 
 EXPORT_DIR = PROJECT_ROOT / "exports" / "evals"
 
-# Hand reviews, relative to data/evals.
 REVIEW_FILES = (
     "runs/post-gw6-01-reviews-v2.jsonl",
     "reviews/step19d-glm-5-3-cloud-task-success.jsonl",
 )
 
-# The history rewrite replaced these commits after the runs recorded them.
 NEW_COMMITS = {
     "e28400a": "de44110",
     "89e4d96": "800771b",
@@ -47,7 +45,6 @@ class Price(BaseModel):
     read_on: date
 
 
-# From https://ollama.com/pricing. gemma4:12b runs locally and has no price.
 PRICES = {
     model: Price(input=input_price, output=output_price, read_on=date(2026, 11, 5))
     for model, input_price, output_price in [
@@ -105,7 +102,6 @@ class Case(BaseModel):
     status: Literal["completed", "error"]
     error_type: str | None
     trace_id: str
-    # None when Langfuse has no trace for the case.
     started_at: datetime | None
     latency_s: float | None
     model_calls: int | None

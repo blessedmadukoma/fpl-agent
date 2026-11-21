@@ -64,7 +64,6 @@ def agent_loop(settings: Settings, user_prompt: str, snapshot_dir: Path,
 
         with safe_observation(langfuse, as_type="span", name="fpl-ask") as root_span:
             if root_span is None:
-                # Do not emit disconnected child traces after root setup failure.
                 langfuse = None
             safe_update(root_span, lambda: {
                 "input": sanitise_trace_data(user_prompt, private_values),
@@ -168,7 +167,6 @@ def agent_loop(settings: Settings, user_prompt: str, snapshot_dir: Path,
                                 call.function.name in horizon_tools
                                 and isinstance(arguments, dict)
                             ):
-                                # Explicit application settings outrank model guesses.
                                 arguments = {**arguments, "horizon": horizon}
                             record["arguments"] = arguments
                             schema, _ = TOOL_REGISTRY[call.function.name]

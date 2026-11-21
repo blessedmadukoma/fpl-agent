@@ -21,17 +21,14 @@ CLUB_LIMIT = 3
 
 @dataclass(frozen=True)
 class SolverSettings:
-    bench_weight: float = 0.15     # bench points only count through autosubs
-    decay: float = 0.9             # a point next week is worth less than a point this week
+    bench_weight: float = 0.15
+    decay: float = 0.9
     hit_cost: int = 4
-    max_hits_per_gw: int = 0       # 0 = never take a hit; raise it with --max-hits
+    max_hits_per_gw: int = 0
     max_free_transfers: int = 5
-    # makes the reported free-transfer count exact (H.9)
     free_transfer_bonus: float = 0.01
     allow_transfers: bool = True
-    # no transfers in the first GW, later ones allowed ("roll")
     hold_first_gw: bool = False
-    # plus your own players; keeps the problem small
     candidates_per_position: int = 50
     time_limit_s: int = 60
 
@@ -42,13 +39,12 @@ class GwPlan:
     buy: list[int]
     sell: list[int]
     xi: list[int]
-    # in autosub order; the reserve goalkeeper is always first
     bench: list[int]
     captain: int
     vice: int
     free_transfers: int
     hits: int
-    expected_points: float      # XI + captain, no bench
+    expected_points: float
 
 
 @dataclass
@@ -94,7 +90,6 @@ def optimise(ep: pd.DataFrame, players: pd.DataFrame, team: TeamState, settings:
         previous_bank = team.bank if i == 0 else bank[gws[i - 1]]
         used = pulp.lpSum(buy[p][g] for p in pool)
 
-        # Squad and XI rules
         model += pulp.lpSum(x[p][g] for p in pool) == 15
         model += pulp.lpSum(y[p][g] for p in pool) == 11
         model += pulp.lpSum(c[p][g] for p in pool) == 1
@@ -118,12 +113,10 @@ def optimise(ep: pd.DataFrame, players: pd.DataFrame, team: TeamState, settings:
             if not settings.allow_transfers or (settings.hold_first_gw and i == 0):
                 model += buy[p][g] == 0
 
-         # Budget: selling price for players you own now, current price otherwise
         model += bank[g] == previous_bank + pulp.lpSum(
             sell_value[p] * sell[p][g] - int(info.at[p, "now_cost"]) * buy[p][g] for p in pool
         )
 
-        # Free transfers (H.9): hits for transfers beyond the free ones, then roll over
         if i == 0:
             model += free[g] == team.free_transfers
         model += hits[g] >= used - free[g]

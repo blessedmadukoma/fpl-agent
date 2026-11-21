@@ -47,8 +47,6 @@ def blend(ctx: GwContext) -> pd.Series:
     return _by_element(ctx, 0.5 * ctx.state.ep_next + 0.5 * ppg_available)
 
 
-# Prior weight, in appearances. Tuned on the 2025/26 replay: k = 4 gives a bias near zero
-# and halves the over-projection of the top 15 players per GW (01-reference.md §I).
 SHRINK_APPEARANCES = 4
 
 

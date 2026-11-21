@@ -18,7 +18,6 @@ SEASON_URL = "https://football-data.co.uk/mmz4281/{code}/E0.csv"
 UPCOMING_URL = "https://football-data.co.uk/fixtures.csv"
 ODDS_COLUMNS = ["AvgH", "AvgD", "AvgA", "Avg>2.5", "Avg<2.5"]
 
-# football-data club name -> FPL short name (stable across seasons)
 CLUB_CODES = {
     "Arsenal": "ARS", "Aston Villa": "AVL", "Bournemouth": "BOU", "Brentford": "BRE", "Brighton": "BHA",
     "Burnley": "BUR", "Chelsea": "CHE", "Coventry": "COV", "Crystal Palace": "CRY", "Everton": "EVE",
@@ -38,7 +37,7 @@ def _read(path, source: str) -> pd.DataFrame:
 
 def load_odds(settings: Settings, con, season: str) -> dict:
     """Write the `odds` table for one season: one row per fixture with odds-implied λ."""
-    code = season[2:4] + season[5:7]  # "2025-26" -> "2526"
+    code = season[2:4] + season[5:7]
     folder = settings.cache_dir / "football-data"
     current = season == Settings.current_season
     frames = [_read(download(SEASON_URL.format(code=code),
@@ -63,7 +62,7 @@ def load_odds(settings: Settings, con, season: str) -> dict:
     raw = raw.astype({"team_h": int, "team_a": int}).merge(
         fixtures, on=["team_h", "team_a"])
     raw = raw.sort_values("source").drop_duplicates(
-        "fixture_id", keep="first")  # "result" wins
+        "fixture_id", keep="first")
 
     rates = [rates_from_odds(*row)
              for row in raw[ODDS_COLUMNS].itertuples(index=False)]

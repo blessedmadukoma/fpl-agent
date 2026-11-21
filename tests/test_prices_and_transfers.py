@@ -28,12 +28,10 @@ def test_a_hit_leaves_one_free_transfer():
 
 
 def test_wildcard_week_keeps_saved_transfers_without_the_plus_one():
-    # GW2 +0 -> 2 for GW3; wildcard in GW3 keeps 2 for GW4
     assert free_transfers(
         _weeks(0, 0, 9), {3: "wildcard"}, started_event=1, max_free=5) == 2
 
 
 def test_the_example_team():
-    # Entry 1234567 in 2026/27: no transfers in GW2-3, two in GW4, two in GW5 -> 1 for GW6
     assert free_transfers(_weeks(0, 0, 0, 2, 2), {},
                           started_event=1, max_free=5) == 1

@@ -69,7 +69,6 @@ def run_cases(
     run_id: str | None = None,
 ) -> None:
     """Run each case and save it before starting the next case."""
-    # The generator starts only after save_results opens the new file.
     records = (
         run_case(
             settings, case, snapshot_root=snapshot_root, run_id=run_id,
@@ -240,7 +239,6 @@ def summarise_results(reviewed_records):
                     f"{record.get('case_id')!r}"
                 )
             score = value["score"]
-            # An answer check scores None when it does not apply to the case.
             if score is None:
                 continue
             if score not in (0, 1):

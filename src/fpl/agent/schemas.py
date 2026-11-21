@@ -227,8 +227,7 @@ class RecommendationResult(SnapshotMetadata):
     actual_gws: list[int]
     threshold: float
     allowed_hits: int
-    plan_objective: float          # transfers allowed in every GW
-    # no transfer this GW (roll it), transfers allowed later
+    plan_objective: float
     hold_objective: float
     gain: float
     make_transfers: bool

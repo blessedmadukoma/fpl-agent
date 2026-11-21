@@ -14,11 +14,9 @@ from typing import Mapping
 LONG_PLAY_MINUTES = 60
 GOALS_CONCEDED_PER_POINT = 2
 SAVES_PER_POINT = 3
-# defensive contribution threshold per position
 DEFCON_THRESHOLD = {"GKP": 10**9, "DEF": 10,
-                    "MID": 12, "FWD": 12}  # GKP cannot earn it
+                    "MID": 12, "FWD": 12}
 
-# Stats that score a fixed coefficient per unit.
 PER_UNIT_STATS = (
     "goals_scored",
     "assists",

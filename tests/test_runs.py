@@ -27,7 +27,7 @@ def test_settle_fills_realised_points_for_both_plans():
     assert settle(con) == 1
     realised, hold = con.execute(
         "select realised_points, hold_realised_points from runs").fetchone()
-    assert realised == 2 + 6 + 6      # captain counts twice
+    assert realised == 2 + 6 + 6
     assert hold == 2 + 9 + 9
 
 

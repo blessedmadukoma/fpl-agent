@@ -39,7 +39,6 @@ def smoke_test():
                           as_type="span", name="fpl.trace-smoke") as span:
         if span is None:
             raise RuntimeError("Langfuse smoke observation could not start.")
-        # This diagnostic must fail on recording errors, unlike normal FPL runs.
         try:
             span.update(input="hello", output="connection works")
         except Exception:
@@ -93,7 +92,6 @@ def private_values_for_run(settings: Settings, snapshot_dir: Path) -> tuple[str,
         logger.warning(
             "Frozen team details unavailable for tracing redaction.")
 
-    # 'ollama' is the documented, non-secret placeholder for a local endpoint.
     ollama_key = settings.ollama_api_key if settings.ollama_api_key != "ollama" else ""
     return collect_private_values(
         ollama_key, settings.langfuse_public_key, settings.langfuse_secret_key,
@@ -265,7 +263,6 @@ def get_matching_prompt(lf_client, local_prompt):
             max_retries=0, fetch_timeout_seconds=2,
         )
     except Exception:
-        # Do not log exception text: HTTP errors can contain credentials or paths.
         logger.warning(
             "Langfuse prompt lookup failed; using the local prompt without a link.")
         return None
@@ -283,7 +280,6 @@ def get_tracing_client(settings):
     try:
         return get_client()
     except Exception:
-        # Do not log exception text: initialisation errors can leak credentials.
         logger.warning(
             "Langfuse client initialisation failed; tracing is disabled.")
         return None
@@ -304,7 +300,6 @@ def _safe_context(create_manager, operation, strict=False):
         if strict:
             raise RuntimeError(f"Langfuse {operation} setup failed.") from None
 
-    # Keep yield outside the setup handler: model/tool errors are not SDK errors.
     caller_failed = False
     try:
         yield value
@@ -317,7 +312,6 @@ def _safe_context(create_manager, operation, strict=False):
     finally:
         if manager is not None:
             try:
-                # Do not let the SDK auto-capture raw exceptions or tracebacks.
                 manager.__exit__(None, None, None)
             except Exception:
                 logger.warning("Langfuse %s cleanup failed; traces may be incomplete.",

@@ -63,8 +63,6 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
-/* Layout: sidebar on wide screens, top bar on phones. */
-
 .layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -154,8 +152,6 @@ a:hover { text-decoration: underline; }
   min-width: 0;
 }
 
-/* Shared page parts. */
-
 .page-header { display: flex; align-items: flex-start; gap: 16px; }
 .page-header > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 h1 { font-size: 28px; line-height: 36px; font-weight: 600; }
@@ -226,8 +222,6 @@ thead th {
 }
 tbody tr { border-top: 1px solid var(--line-soft); }
 
-/* Evals. */
-
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 12px; }
 .stat { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
 .stat-label { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 16px; }
@@ -278,8 +272,6 @@ summary::-webkit-details-marker { display: none; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; }
 .failed-list .detail { color: var(--ink-2); overflow-wrap: anywhere; }
 
-/* History. */
-
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .search {
   flex: 0 1 320px;
@@ -327,8 +319,6 @@ summary::-webkit-details-marker { display: none; }
 
 .pagination { display: flex; align-items: center; gap: 8px; }
 .pagination p { margin-right: auto; color: var(--muted); font-size: 13px; line-height: 18px; }
-
-/* Answer. */
 
 .question-card { display: flex; flex-direction: column; gap: 16px; }
 .card-label { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 16px; }
@@ -380,8 +370,6 @@ summary::-webkit-details-marker { display: none; }
 .result-details summary { color: var(--muted); font-size: 12px; line-height: 18px; }
 .result-details .link { color: var(--ink-3); font-weight: 500; text-decoration: underline; }
 .result-details[open] .code { margin-top: 8px; max-height: 480px; overflow: auto; }
-
-/* Phones. */
 
 @media (min-width: 768px) {
   [data-sidebar="collapsed"] .layout { grid-template-columns: 64px minmax(0, 1fr); }

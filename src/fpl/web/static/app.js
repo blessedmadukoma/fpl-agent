@@ -1,4 +1,3 @@
-// Loaded in <head> without defer, so the saved theme and sidebar state apply before the first paint.
 const root = document.documentElement;
 
 function load(key) {

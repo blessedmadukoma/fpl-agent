@@ -16,8 +16,8 @@ import pandas as pd
 from fpl.context import GwContext
 from fpl.storage import query
 
-DECAY_PER_DAY = 0.005   # weight halves about every 140 days
-RIDGE = 2.0             # pulls team ratings towards average when data is thin
+DECAY_PER_DAY = 0.005
+RIDGE = 2.0
 
 
 @dataclass(frozen=True)

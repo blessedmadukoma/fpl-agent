@@ -48,7 +48,6 @@ def news_kind(news: str, deadline: pd.Timestamp) -> str:
     if match:
         day, month = match.groups()
         back = pd.Timestamp(f"{day} {month} {deadline.year}", tz="UTC")
-        # e.g. "Expected back 3 Jan" said in December
         if back < deadline - pd.Timedelta(days=180):
             back += pd.DateOffset(years=1)
         return "back_by_deadline" if back <= deadline + pd.Timedelta(days=2) else "back_later"
@@ -105,8 +104,8 @@ def training_rows(con, season_gws: list[tuple[str, int]]) -> pd.DataFrame:
 @dataclass
 class MinutesModel:
     models: dict
-    minutes_if_60: float    # mean minutes when a player plays 60+
-    minutes_if_short: float  # mean minutes when a player plays 1-59
+    minutes_if_60: float
+    minutes_if_short: float
 
     @classmethod
     def fit(cls, rows: pd.DataFrame, minutes: pd.Series) -> "MinutesModel":
@@ -128,7 +127,7 @@ class MinutesModel:
             x)[:, 1] for name, m in self.models.items()}, index=table.index)
         out["p_play"] = np.maximum(out.p_play, out.p_60)
         out["p_start"] = np.minimum(out.p_start, out.p_play)
-        out["p_short"] = out.p_play - out.p_60  # 1-59 minutes
+        out["p_short"] = out.p_play - out.p_60
         out["e_minutes"] = out.p_60 * self.minutes_if_60 + \
             out.p_short * self.minutes_if_short
         return out

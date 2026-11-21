@@ -246,7 +246,6 @@ def cmd_create_snapshot(settings: Settings, args) -> None:
         update_summary = update_current(client, con)
         ctx, team = current_team(con, client, entry_id(settings))
 
-    # create snapshot
     response = create_snapshot(
         ctx,
         settings,
@@ -272,7 +271,6 @@ def cmd_ask_model(settings: Settings, args):
 
     options = {} if args.horizon is None else {"horizon": args.horizon}
     answer = agent_loop(settings, args.question, args.snapshot, **options)
-    # report.print_model_answer(answer)
     print(answer)
 
 
@@ -447,7 +445,6 @@ def main(argv: list[str] | None = None) -> None:
     """entry point"""
     logging.basicConfig(level=logging.INFO,
                         format="%(levelname)s %(name)s: %(message)s")
-    # one line per request is too noisy
     logging.getLogger("httpx").setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(
         prog="fpl", description="FPL projections and optimiser")

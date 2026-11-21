@@ -8,7 +8,7 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any  # we'd need to change this, nothing must use Any
+from typing import Any
 
 import httpx
 
@@ -56,7 +56,6 @@ class FplClient:
         raise RuntimeError(
             f"FPL API request failed after {retries} attempts: {path}")
 
-    # Named helpers to prevent callers from building URLS by hand
     def bootstrap(self) -> dict:
         return self.get("bootstrap-static/")
 

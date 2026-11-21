@@ -12,10 +12,8 @@ from fpl.config import Settings
 from fpl.fplapi import FplClient
 from fpl.storage import replace_rows
 
-# FPL element_type -> position
 POSITIONS = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
 
-# Per-player stats we keep from event/{gw}/live. Numeric strings (xG) are cast to float.
 LIVE_STATS = [
     "minutes", "starts", "total_points", "goals_scored", "assists", "clean_sheets",
     "goals_conceded", "saves", "bonus", "bps", "defensive_contribution",
@@ -136,7 +134,6 @@ def player_gw_frame(live: dict, gw: int, players: pd.DataFrame, season: str) -> 
     """One row per player per finished GW, with GW-total stats."""
     rows = []
     for element in live["elements"]:
-        # the player's team had no fixture (blank GW)
         if not element["explain"]:
             continue
         stats = element["stats"]

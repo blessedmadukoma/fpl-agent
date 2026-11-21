@@ -60,7 +60,6 @@ def reconstruct(client: FplClient, entry_id: int, players: pd.DataFrame, next_gw
     chips_by_gw = {c["event"]: c["name"] for c in history["chips"]}
     last_gw = max(row["event"] for row in history["current"])
 
-    # After a Free Hit, the picks for that GW are the Free Hit squad; the real squad reverted.
     base_gw = last_gw - 1 if chips_by_gw.get(last_gw) == "freehit" else last_gw
     squad = [pick["element"]
              for pick in client.entry_picks(entry_id, base_gw)["picks"]]
@@ -107,7 +106,7 @@ def free_transfers(current: list[dict], chips_by_gw: dict[int, str], started_eve
     Normal week: unused transfers roll over (+1 a week, capped). A hit leaves me with 1.
     Wildcard or Free Hit week: saved transfers are kept, with no +1 (FPL rules text).
     """
-    free = 1  # the first GW after I join
+    free = 1
     for row in sorted(current, key=lambda r: r["event"]):
         if row["event"] <= started_event:
             continue
@@ -138,10 +137,10 @@ def _purchase_prices(client, squad, transfers, chips_by_gw, prices, started_even
     for element in squad:
         if element in bought:
             result[element] = bought[element]
-        elif started_event == 1:  # prices do not change before the GW1 deadline
+        elif started_event == 1:
             result[element] = int(
                 prices.at[element, "now_cost"] - prices.at[element, "cost_change_start"])
-        else:  # joined later: the price in the round you joined
+        else:
             rounds = client.element_summary(element)["history"]
             result[element] = next(r["value"]
                                    for r in rounds if r["round"] >= started_event)

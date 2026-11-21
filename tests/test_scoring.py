@@ -1,6 +1,5 @@
 from fpl.scoring import Rules, score
 
-# The 2026/27 coefficients, as returned in game_config.scoring (only the keys score() uses).
 RULES = Rules(
     {
         "long_play": 2, "short_play": 1, "assists": 3, "saves": 1, "bonus": 1,

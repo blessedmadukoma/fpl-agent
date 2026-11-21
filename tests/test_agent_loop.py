@@ -101,7 +101,6 @@ def runtime(tmp_path, monkeypatch, fake_langfuse):
     monkeypatch.setattr(observability, "get_client", fake_langfuse.get_client)
     monkeypatch.setattr(observability, "propagate_attributes", fake_langfuse.propagate_attributes)
     fake_langfuse.prompt.prompt = "You assist with Fantasy Premier League."
-    # Check file loading separately so a prompt bug does not mask loop behaviour.
     monkeypatch.setattr(loop, "message_client", lambda message: [
         {"role": "system", "content": "You assist with Fantasy Premier League."},
         {"role": "user", "content": message},
